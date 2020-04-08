@@ -1,6 +1,4 @@
 #!/bin/bash
-readonly DEEPOPS_VER=20.02
-
 readonly GIT_TAG=$(git tag --points-at HEAD)
 readonly GIT_HASH=$(git rev-parse HEAD)
 readonly THIS_SCRIPT_VER=${GIT_TAG:-$GIT_HASH}
@@ -181,8 +179,6 @@ generate_conf(){
 }
 
 prepare_deepops(){
-  git clone https://github.com/NVIDIA/deepops.git -b $DEEPOPS_VER
-
   # 古いansibleがある場合に
   # ModuleNotFoundError: No module named 'ansible'となることのワークアラウンド。
   if type "ansible" > /dev/null 2>&1
