@@ -281,6 +281,13 @@ show_kqi_url(){
   echo "にアクセスしてください"
 }
 
+update(){
+  echo -e "アプリのアップデートを開始します"
+  cd $HELM_DIR
+  ./deploy-kqi-app.sh update
+  echo -e "アプリのアップデートが完了しました"
+}
+
 # 呼び出しフォーマット: deploy <sub command> <deepopsのコマンドに渡す引数群(${@:2})>
 deploy(){
   case $1 in
@@ -317,6 +324,7 @@ Commands:
   prepare    構築に利用するツールのインストールを行います
   configure  構築の設定を行います
   deploy     構築します
+  update     アプリのアップデートを行います
   clean      アンインストールします
   help       このヘルプを表示します
 
@@ -332,6 +340,7 @@ main(){
     prepare) prepare;;
     configure) configure ${@:2};;
     deploy) deploy ${@:2};;
+    update) update ${@:2};;
     clean) clean ${@:2};;
     help) show_help ;;
     *) show_help ;;

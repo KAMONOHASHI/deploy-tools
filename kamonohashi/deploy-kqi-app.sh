@@ -26,13 +26,16 @@ set_credentials(){
 }
 
 deploy(){
-    helm dependency update charts/kamonohashi
-    helm upgrade kamonohashi charts/kamonohashi -f conf/settings.yml -i --namespace kqi-system
+    helm upgrade kamonohashi charts/kamonohashi -f conf/settings.yml -i --namespace kqi-system --wait
 }
 
 update(){
-    helm dependency update charts/kamonohashi
-    helm upgrade -i kamonohashi charts/kamonohashi -f conf/settings.yml --namespace kqi-system
+    helm upgrade \
+      -i kamonohashi charts/kamonohashi \
+      -f conf/settings.yml \
+      --namespace kqi-system \
+      --wait \
+      --recreate-pods
 }
 
 clean(){

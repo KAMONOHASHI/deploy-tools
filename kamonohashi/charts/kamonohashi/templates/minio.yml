@@ -54,8 +54,8 @@ spec:
           httpGet:
             path: /minio/health/ready
             port: 9000
-          initialDelaySeconds: 120
-          periodSeconds: 20
+          initialDelaySeconds: 10
+          periodSeconds: 10
         # Liveness probe detects situations where MinIO server instance
         # is not working properly and needs restart. Kubernetes automatically
         # restarts the pods if liveness checks fail.
@@ -63,5 +63,5 @@ spec:
           httpGet:
             path: /minio/health/live
             port: 9000
-          initialDelaySeconds: 120
-          periodSeconds: 20
+          initialDelaySeconds: 10
+          periodSeconds: 10
