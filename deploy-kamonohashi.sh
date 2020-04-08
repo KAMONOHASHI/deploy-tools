@@ -187,6 +187,8 @@ prepare_deepops(){
   fi
   cd $DEEPOPS_DIR
   ./scripts/setup.sh
+  # deepops20.02のバグでdeepopsリポジトリの中にdeepopsリポジトリをクローンすることのワークアラウンド
+  rm -rf $DEEPOPS_DIR/deepops
 }
 
 # prepareでは設定ディレクトリのみ用意
