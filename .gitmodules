@@ -1,0 +1,3 @@
+[submodule "deepops"]
+	path = deepops
+	url = https://github.com/NVIDIA/deepops.git

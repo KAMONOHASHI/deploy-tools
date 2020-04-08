@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+  namespace: kqi-system
+spec:
+  selector:
+    matchLabels:
+      app: nginx 
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      nodeSelector:
+        kubernetes.io/hostname: {{ .Values.kqi_node }}
+      volumes:
+      - name: config-volume
+        configMap:
+          name: nginx-config
+      containers:
+      - name: nginx
+        image: nginx:1.17.9
+        resources:
+          limits:
+            cpu: {{ .Values.resources.nginx.cpu }}
+            memory: {{ .Values.resources.nginx.memory }}
+          requests:
+            cpu: {{ .Values.resources.nginx.cpu }}
+            memory: {{ .Values.resources.nginx.memory }}
+        volumeMounts:
+        - name: config-volume
+          mountPath: "/etc/nginx/conf.d"
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  namespace: kqi-system
+data:
+  default.conf: |
+    server {
+      listen       80 default_server;
+      location /api {
+        proxy_pass http://platypus-web-api.kqi-system.svc.cluster.local:8090;
+      }
+      location / {
+        proxy_pass http://platypus-web-pages.kqi-system.svc.cluster.local:8080/;
+      }
+      location /ws {
+        proxy_pass http://platypus-web-api-ws.kqi-system.svc.cluster.local:8091;
+        # WebSocket用の設定
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+      }
+      location ~ ^/nodeport/(.*)/$ {
+        proxy_pass http://localhost:$1/;
+        # 意図せず帯域を過剰に消費することのみ抑制する
+        # 意図的に複数接続作り帯域制限を回避するケースは想定しない
+        limit_rate {{ .Values.resources.nginx.limit_rate }};
+      }
+    }
+
+
