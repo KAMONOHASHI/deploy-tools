@@ -304,8 +304,13 @@ deploy(){
       deploy_k8s ${@:2} &&
       deploy_nfs &&
       deploy_kqi_helm $PASSWORD |& tee -a $LOG_FILE
-      echo -e "\n\n 構築が完了しました"
-      show_kqi_url
+
+      if [ $? -eq 0 ]; then
+        echo -e "\n\n 構築が完了しました"
+        show_kqi_url
+      else
+        echo -e "構築でエラーが発生しました"
+      fi
       ;;
     *)
       echo "deployの引数は all, infra, nfs, k8s, app, nvidia-gpg-key が指定可能です" >&2
