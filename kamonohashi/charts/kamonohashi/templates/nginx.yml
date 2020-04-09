@@ -60,12 +60,6 @@ data:
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
       }
-      location ~ ^/nodeport/(.*)/$ {
-        proxy_pass http://localhost:$1/;
-        # 意図せず帯域を過剰に消費することのみ抑制する
-        # 意図的に複数接続作り帯域制限を回避するケースは想定しない
-        limit_rate {{ .Values.resources.nginx.limit_rate }};
-      }
     }
 
 

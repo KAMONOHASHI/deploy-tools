@@ -32,7 +32,6 @@ resources:
   nginx:
     cpu: 100m
     memory: 128Mi
-    limit_rate: 100m
 
 # コンテナに指定するプロキシ
 # http_proxy:
