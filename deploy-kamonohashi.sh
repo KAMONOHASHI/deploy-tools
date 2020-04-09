@@ -189,6 +189,8 @@ prepare_deepops(){
   ./scripts/setup.sh
   # deepops20.02のバグでdeepopsリポジトリの中にdeepopsリポジトリをクローンすることのワークアラウンド
   rm -rf $DEEPOPS_DIR/deepops
+  # deepops 20.02のバグ(https://github.com/NVIDIA/deepops/pull/492)のワークアラウンド
+  ansible-galaxy install -r $FILES_DIR/deepops/requirements.yml --force
 }
 
 # prepareでは設定ディレクトリのみ用意
