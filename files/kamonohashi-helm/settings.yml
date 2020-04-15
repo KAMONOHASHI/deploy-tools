@@ -20,20 +20,20 @@ appsettings:
 # 各コンテナのリソース割り当て
 resources:
   platypus_web_api:
-    cpu: 250m
-    memory: 512Mi
+    cpu: 500m
+    memory: 1024Mi
   platypus_web_pages:
     cpu: 100m
     memory: 256Mi
   postgres:
-    cpu: 250m
-    memory: 1024Mi
+    cpu: 500m
+    memory: 2048Mi
   minio:
-    cpu: 100m
-    memory: 256Mi
+    cpu: 500m
+    memory: 512Mi
   nginx:
-    cpu: 100m
-    memory: 128Mi
+    cpu: 500m
+    memory: 256Mi
 
 # コンテナに指定するプロキシ
 # http_proxy:
