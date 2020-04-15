@@ -34,7 +34,7 @@ update(){
       -i kamonohashi charts/kamonohashi \
       -f conf/settings.yml \
       --namespace kqi-system \
-      --wait 
+      --wait
 }
 
 clean(){

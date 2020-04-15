@@ -15,6 +15,10 @@ spec:
       name: platypus-web-api
       labels:
         app: platypus-web-api
+      annotations:
+        # アップデート時にPod再起動をかけるためのワークアラウンド
+        # configmapのみ変更だとPod再起動しないのでannotationを変更させる
+        timestamp: "{{ .Release.Time }}"
     spec:
       serviceAccountName: platypus
       nodeSelector:
