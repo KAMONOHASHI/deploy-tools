@@ -8,6 +8,8 @@ spec:
   selector:
     matchLabels:
       app: platypus-web-pages
+  strategy:
+    type: Recreate
   template:
     metadata:
       name: platypus-web-pages
