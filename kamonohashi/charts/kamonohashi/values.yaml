@@ -1,3 +1,5 @@
+minio_deploy: true
+
 # 各コンテナのリソース割り当て
 resources:
   platypus_web_api:

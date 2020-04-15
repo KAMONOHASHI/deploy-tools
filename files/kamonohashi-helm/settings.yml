@@ -1,5 +1,7 @@
 # kamonohashiをデプロイするnode
 kqi_node: "${KQI_NODE}"
+# オブジェクトストレージとしてminioをデプロイするかどうか
+minio_deploy: true
 
 appsettings:
   DeployOptions__GpuNodes: "${NODES}"

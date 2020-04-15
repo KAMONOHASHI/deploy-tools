@@ -245,7 +245,13 @@ clean(){
 
 deploy_nfs(){
   cd $DEEPOPS_DIR
-  ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook -l nfs-server playbooks/nfs-server.yml $@
+  # エラー「ERROR! Specified hosts and/or --limit does not match any hosts」が出ればnfs-serverが指定されていないのでスキップ
+  ansible-playbook -l nfs-server --list-hosts playbooks/nfs-server.yml &> /dev/null
+  if [ $? -eq 0 ]; then
+    ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook -l nfs-server playbooks/nfs-server.yml $@
+  else
+    echo "inventoryにnfs-serverが指定されていないため、NFSサーバー構築をスキップします" |& tee -a $LOG_FILE
+  fi
 }
 
 # ansibleの更新チェック誤作動でgpgの更新が効かない場合に実行する
