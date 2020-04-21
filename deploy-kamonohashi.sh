@@ -179,12 +179,6 @@ generate_conf(){
 }
 
 prepare_deepops(){
-  # 古いansibleがある場合に
-  # ModuleNotFoundError: No module named 'ansible'となることのワークアラウンド。
-  if type "ansible" > /dev/null 2>&1
-  then
-    pip uninstall -y ansible
-  fi
   cd $DEEPOPS_DIR
   ./scripts/setup.sh
 }
