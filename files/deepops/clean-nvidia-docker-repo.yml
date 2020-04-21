@@ -6,3 +6,4 @@
       file:
         path: /etc/apt/sources.list.d/nvidia-docker.list
         state: absent
+      ignore_errors: true
