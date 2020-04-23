@@ -295,6 +295,17 @@ deploy(){
   esac
 }
 
+check(){
+  . $DEEPOPS_DIR/scripts/proxy.sh
+  echo "Kubernetesの状態"
+  kubectl version
+  echo "Helmの状態"
+  helm version
+  echo "KAMONOHASHIの状態"
+  helm status kamonohashi
+}
+
+
 show_help(){
 cat <<EOF
 Usage: ./deploy-kamonohashi.sh COMMAND [ARGS] [OPTIONS]
@@ -307,6 +318,7 @@ Commands:
   deploy     構築します
   update     アプリのアップデートを行います
   clean      アンインストールします
+  check      デプロイの状態確認を行います
   help       このヘルプを表示します
 
 詳細は ${HELP_URL} で確認してください
@@ -323,6 +335,7 @@ main(){
     deploy) deploy ${@:2};;
     update) update ${@:2};;
     clean) clean ${@:2};;
+    check) check ${@:2};;
     help) show_help ;;
     *) show_help ;;
   esac
