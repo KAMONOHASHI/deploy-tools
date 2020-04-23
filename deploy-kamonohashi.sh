@@ -147,7 +147,16 @@ generate_helm_conf(){
   append_proxy_helm_conf
 }
 
+backup_old_conf(){
+  local SUFFIX=$(date +%Y%m%d)
+  mkdir -p $INFRA_CONF_DIR/old/ $APP_CONF_DIR/old/
+  cp $INVENTORY $INFRA_CONF_DIR/old/inventory.$SUFFIX
+  cp -r $GROUP_VARS_DIR $INFRA_CONF_DIR/old/group_vars.$SUFFIX
+  cp -r $APP_CONF_FILE $APP_CONF_DIR/old/settings.yml.$SUFFIX
+}
+
 generate_conf(){
+  backup_old_conf
   generate_nfs_vars
   generate_deepops_inventory
   replace_group_vars
