@@ -37,16 +37,9 @@ ask_cluster_node_conf(){
   echo -en "\e[33m計算ノード名(,区切りで複数可): \e[m"; read COMPUTE_NODES_COMMA
 }
 
-ask_proxy_conf(){
-  echo -en "\e[33mプロキシを設定しますか？ [y/N]: \e[m"; read PROXY_FLAG
-  case $PROXY_FLAG in
-   [Yy]* ) 
-     echo -en "\e[33mhttp_proxy: \e[m"; read HTTP_PROXY
-     echo -en "\e[33mhttps_proxy: \e[m"; read HTTPS_PROXY
-     echo -en "\e[33mno_proxy: \e[m"; read ADDITIONAL_NO_PROXY
-     ;;   
-   *) ;;
-  esac
+# コマンド実行前にユーザーにdeepops側にプロキシ設定させ、それを読み込む
+load_proxy_conf(){
+  . $DEEPOPS_DIR/scripts/proxy.sh
 }
 
 ask_cluster_conf(){
@@ -55,7 +48,6 @@ ask_cluster_conf(){
 
   ask_cluster_node_conf
   ask_ssh_user
-  ask_proxy_conf
 }
 
 set_single_node_conf(){
@@ -67,27 +59,11 @@ set_single_node_conf(){
 }
 
 ask_single_node_conf(){
-  echo "クラスタの構成情報を入力してください"
+  echo "構成情報を入力してください"
   echo "詳細は ${HELP_URL} を参照してください"
 
   ask_ssh_user
   set_single_node_conf
-  ask_proxy_conf
-}
-
-append_proxy_ansible_vars(){
-  # 改行の挿入
-  echo "" >> $GROUP_VARS_ALL
-  if [ ! -z "$HTTP_PROXY" ]; then
-    echo "http_proxy: $HTTP_PROXY" >> $GROUP_VARS_ALL
-  fi
-  if [ ! -z "$HTTPS_PROXY" ]; then
-    echo "https_proxy: $HTTPS_PROXY" >> $GROUP_VARS_ALL
-  fi
-  # ansible側でno_proxyは組み立てる
-  if [ ! -z "$ADDITIONAL_NO_PROXY" ]; then
-    echo "additional_no_proxy: $ADDITIONAL_NO_PROXY" >> $GROUP_VARS_ALL
-  fi
 }
 
 get_ip(){
@@ -105,21 +81,21 @@ get_ip(){
 append_proxy_helm_conf(){
   # 改行の挿入
   echo "" >> $APP_CONF_FILE
-  if [ ! -z "$HTTP_PROXY" ]; then
-    echo "http_proxy: '$HTTP_PROXY'" >>  $APP_CONF_FILE
+  if [ ! -z "$http_proxy" ]; then
+    echo "http_proxy: '$http_proxy'" >>  $APP_CONF_FILE
   fi
-  if [ ! -z "$HTTPS_PROXY" ]; then
-    echo "https_proxy: '$HTTPS_PROXY'" >> $APP_CONF_FILE
+  if [ ! -z "$https_proxy" ]; then
+    echo "https_proxy: '$https_proxy'" >> $APP_CONF_FILE
   fi  
-  if [ ! -z "$HTTP_PROXY" ] || [ ! -z "$HTTPS_PROXY" ]; then
-    # kamonohashiコンテナに設定するNO_PROXYの生成
+  if [ ! -z "$http_proxy" ] || [ ! -z "$https_proxy" ]; then
+    # kamonohashiコンテナに設定するno_proxyの生成
     KUBE_MASTER_IP=$(get_ip $KUBE_MASTER)
     STORAGE_IP=$(get_ip $STORAGE)
-    NO_PROXY=$KUBE_MASTER,$KUBE_MASTER_IP,$STORAGE,$STORAGE_IP,localhost,127.0.0.1,.local
-    if [ ! -z "$ADDITIONAL_NO_PROXY" ]; then
-      NO_PROXY=$NO_PROXY,$ADDITIONAL_NO_PROXY
-    fi
-    echo "no_proxy: '$NO_PROXY'" >>  $APP_CONF_FILE
+    no_proxy=$KUBE_MASTER,$KUBE_MASTER_IP,$STORAGE,$STORAGE_IP,localhost,127.0.0.1,.local,$no_proxy
+    # 重複排除
+    no_proxy=$(echo -n "$no_proxy" | awk 'BEGIN{RS=ORS=","} {sub(/ ..:..:..$/,"")} !seen[$0]++')
+    
+    echo "no_proxy: '$no_proxy'" >>  $APP_CONF_FILE
   fi
 }
 
@@ -197,10 +173,12 @@ configure(){
   case $1 in
     cluster)  
       ask_cluster_conf
+      load_proxy_conf
       generate_conf
     ;;
     single-node)  
       ask_single_node_conf
+      load_proxy_conf
       generate_conf
     ;;
     *)
