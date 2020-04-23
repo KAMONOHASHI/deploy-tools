@@ -78,35 +78,58 @@ get_ip(){
   echo $IP
 }
 
-append_proxy_helm_conf(){
-  # 改行の挿入
-  echo "" >> $APP_CONF_FILE
-  if [ ! -z "$http_proxy" ]; then
-    echo "http_proxy: '$http_proxy'" >>  $APP_CONF_FILE
-  fi
-  if [ ! -z "$https_proxy" ]; then
-    echo "https_proxy: '$https_proxy'" >> $APP_CONF_FILE
+# no_proxyを正しく設定していなかった場合でも動くようにKAMONOHASHIでno_proxyを設定する
+setup_no_proxy(){
+  KUBE_MASTER_IP=$(get_ip $KUBE_MASTER)
+  STORAGE_IP=$(get_ip $STORAGE)
+  NO_PROXY_BASE=$KUBE_MASTER,$KUBE_MASTER_IP,$STORAGE,$STORAGE_IP,$COMPUTE_NODES_COMMA,$KQI_NODE,localhost,127.0.0.1,.local
+
+  if [ ! -z "$no_proxy" ]; then
+    no_proxy=$no_proxy,$NO_PROXY_BASE
+  else
+    no_proxy=$NO_PROXY_BASE
   fi  
-  if [ ! -z "$http_proxy" ] || [ ! -z "$https_proxy" ]; then
-    # kamonohashiコンテナに設定するno_proxyの生成
-    KUBE_MASTER_IP=$(get_ip $KUBE_MASTER)
-    STORAGE_IP=$(get_ip $STORAGE)
-    no_proxy=$KUBE_MASTER,$KUBE_MASTER_IP,$STORAGE,$STORAGE_IP,localhost,127.0.0.1,.local,$no_proxy
-    # 重複排除
-    no_proxy=$(echo -n "$no_proxy" | awk 'BEGIN{RS=ORS=","} {sub(/ ..:..:..$/,"")} !seen[$0]++')
-    
-    echo "no_proxy: '$no_proxy'" >>  $APP_CONF_FILE
+  # 重複排除
+  no_proxy=$(echo -n "$no_proxy" | awk 'BEGIN{RS=ORS=","} {sub(/ ..:..:..$/,"")} !seen[$0]++')
+  #末尾の,削除
+  export no_proxy=${no_proxy%,}
+}
+
+# 本来deepoposのsetup.shで設定されるはずだが、バグで設定されないので
+# KAMONOHASHIで設定する。「http_proxyが存在するがhttps_proxyがない」ようなケースは想定しない
+append_deepops_proxy_conf(){
+cat <<EOF >> $GROUP_VARS_ALL
+
+http_proxy: $http_proxy
+https_proxy: $https_proxy
+no_proxy: $no_proxy
+
+proxy_env:
+  http_proxy: $http_proxy
+  https_proxy: $https_proxy
+  no_proxy: $no_proxy
+EOF
+}
+
+# 「http_proxyが存在するがhttps_proxyがない]」ようなケースは想定しない
+append_proxy_helm_conf(){
+
+cat <<EOF >> $APP_CONF_FILE
+
+http_proxy: $http_proxy
+https_proxy: $https_proxy
+no_proxy: $no_proxy
+EOF
+}
+
+generate_deepops_vars(){
+  # backup_old_conf関数でバックアップが取得済み想定で、ファイルを初期化する。
+  cp -f $FILES_DIR/deepops/all.yml $GROUP_VARS_ALL
+  cp -f $FILES_DIR/deepops/nfs-server.yml $GROUP_VARS_DIR
+  cp -f $FILES_DIR/deepops/k8s-cluster.yml $GROUP_VARS_K8S
+  if [ ! -z "$https_proxy" ]; then
+    append_deepops_proxy_conf
   fi
-}
-
-generate_nfs_vars(){
-  echo "software_extra_packages: [nfs-common]" >> $GROUP_VARS_ALL
-  cp $FILES_DIR/deepops/nfs-server.yml $GROUP_VARS_DIR
-}
-
-# kubesprayのhelmはバグでデプロイできないのでdeepopsと別でインストールする
-replace_group_vars(){
-  sed -i 's/helm_enabled: true/helm_enabled: false/g' $GROUP_VARS_K8S
 }
 
 generate_deepops_inventory(){
@@ -144,7 +167,9 @@ generate_helm_conf(){
   NFS_PATH=/var/lib/kamonohashi/nfs \
   envsubst < $FILES_DIR/kamonohashi-helm/settings.yml > $APP_CONF_FILE
 
-  append_proxy_helm_conf
+  if [ ! -z "$https_proxy" ]; then
+    append_proxy_helm_conf
+  fi
 }
 
 backup_old_conf(){
@@ -155,11 +180,14 @@ backup_old_conf(){
   cp -r $APP_CONF_FILE $APP_CONF_DIR/old/settings.yml.$SUFFIX
 }
 
+generate_deepops_conf(){
+  generate_deepops_inventory
+  generate_deepops_vars
+}
+
 generate_conf(){
   backup_old_conf
-  generate_nfs_vars
-  generate_deepops_inventory
-  replace_group_vars
+  generate_deepops_conf
   generate_helm_conf
 }
 
@@ -182,12 +210,12 @@ configure(){
   case $1 in
     cluster)  
       ask_cluster_conf
-      load_proxy_conf
+      setup_no_proxy
       generate_conf
     ;;
     single-node)  
       ask_single_node_conf
-      load_proxy_conf
+      setup_no_proxy
       generate_conf
     ;;
     *)
