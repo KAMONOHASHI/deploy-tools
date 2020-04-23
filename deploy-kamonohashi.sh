@@ -1,13 +1,13 @@
 #!/bin/bash
-readonly GIT_TAG=$(git tag --points-at HEAD)
-readonly GIT_HASH=$(git rev-parse HEAD)
+readonly SCRIPT_DIR=$(cd $(dirname $0); pwd)
+readonly GIT_TAG=$(cd $SCRIPT_DIR && git tag --points-at HEAD)
+readonly GIT_HASH=$(cd $SCRIPT_DIR && git rev-parse HEAD)
 readonly THIS_SCRIPT_VER=${GIT_TAG:-$GIT_HASH}
 
 readonly LOG_DIR=/var/log/kamonohashi/deploy-tools
 readonly LOG_FILE=$LOG_DIR/deploy_$(date '+%Y%m%d-%H%M%S').log
 
 readonly HELP_URL="https://kamonohashi.ai/docs/install-and-update"
-readonly SCRIPT_DIR=$(cd $(dirname $0); pwd)
 
 readonly DEEPOPS_DIR=$SCRIPT_DIR/deepops
 readonly HELM_DIR=$SCRIPT_DIR/kamonohashi
