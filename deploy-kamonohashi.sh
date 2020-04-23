@@ -296,11 +296,12 @@ deploy(){
 }
 
 check(){
-  . $DEEPOPS_DIR/scripts/proxy.sh
-  echo "Kubernetesの状態"
+  echo "#Kubernetesの状態"
   kubectl version
+  echo ""
   echo "Helmの状態"
   helm version
+  echo ""
   echo "KAMONOHASHIの状態"
   helm status kamonohashi
 }
@@ -328,6 +329,7 @@ EOF
 
 main(){
   cd $SCRIPT_DIR
+  load_proxy_conf
   set -e
   case $1 in
     prepare) prepare;;
