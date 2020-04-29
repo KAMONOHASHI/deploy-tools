@@ -334,8 +334,7 @@ deploy(){
 
 scale(){
   cd $DEEPOPS_DIR
-  # deepopsのバグのワークアラウンド https://github.com/NVIDIA/deepops/issues/502
-  ansible-playbook -l k8s-cluster kubespray/scale.yml -e kubelet_cgroup_driver=cgroupfs
+  ansible-playbook -l k8s-cluster kubespray/scale.yml
   ansible-playbook -l k8s-cluster playbooks/k8s-cluster.yml
 }
 
@@ -383,6 +382,7 @@ main(){
     update) update ${@:2};;
     clean) clean ${@:2};;
     check) check ${@:2};;
+    scale) scale ${@:2};;
     help) show_help ;;
     *) show_help ;;
   esac

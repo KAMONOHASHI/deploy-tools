@@ -46,3 +46,6 @@ docker_daemon_json:
 # Addons deployed in kube-system namespaces are handled.
 #podsecuritypolicy_enabled: false
 
+
+# deepopsのバグのワークアラウンド https://github.com/NVIDIA/deepops/issues/502
+kubelet_cgroup_driver: cgroupfs
