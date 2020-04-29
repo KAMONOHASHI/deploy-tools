@@ -288,8 +288,8 @@ deploy_kqi_helm(){
     PASSWORD=$1
   fi
 
-  ./deploy-kqi-app.sh prepare
-  PASSWORD=$PASSWORD DB_PASSWORD=$PASSWORD STORAGE_PASSWORD=$PASSWORD ./deploy-kqi-app.sh credentials
+  ./deploy-kqi-app.sh prepare &&
+  PASSWORD=$PASSWORD DB_PASSWORD=$PASSWORD STORAGE_PASSWORD=$PASSWORD ./deploy-kqi-app.sh credentials &&
   ./deploy-kqi-app.sh deploy
 }
 
