@@ -212,5 +212,3 @@ deepops_venv: '{{ deepops_dir }}/venv'
 # additional settings by KAMONOHASHI
 ######
 
-# NFSクライント設定
-software_extra_packages: [nfs-common]

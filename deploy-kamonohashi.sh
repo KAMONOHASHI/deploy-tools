@@ -256,6 +256,9 @@ clean(){
 
 deploy_nfs(){
   cd $DEEPOPS_DIR
+  # nfs-clientを全てのノードに入れる
+  ansible-playbook -l all playbooks/nfs-client.yml
+
   # エラー「ERROR! Specified hosts and/or --limit does not match any hosts」が出ればnfs-serverが指定されていないのでスキップ
   ansible-playbook -l nfs-server --list-hosts playbooks/nfs-server.yml &> /dev/null
   if [ $? -eq 0 ]; then
