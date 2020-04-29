@@ -332,6 +332,13 @@ deploy(){
   esac
 }
 
+scale(){
+  cd $DEEPOPS_DIR
+  # deepopsのバグのワークアラウンド https://github.com/NVIDIA/deepops/issues/502
+  ansible-playbook -l k8s-cluster kubespray/scale.yml -e kubelet_cgroup_driver=cgroupfs
+  ansible-playbook -l k8s-cluster playbooks/k8s-cluster.yml
+}
+
 check(){
   echo "#Kubernetesの状態"
   kubectl version
@@ -357,6 +364,7 @@ Commands:
   update     アプリのアップデートを行います
   clean      アンインストールします
   check      デプロイの状態確認を行います
+  scale      ノードの追加を行います
   help       このヘルプを表示します
 
 詳細は ${HELP_URL} で確認してください
