@@ -175,9 +175,11 @@ generate_helm_conf(){
 backup_old_conf(){
   local SUFFIX=$(date +%Y%m%d)
   mkdir -p $INFRA_CONF_DIR/old/ $APP_CONF_DIR/old/
-  cp $INVENTORY $INFRA_CONF_DIR/old/inventory.$SUFFIX
-  cp -r $GROUP_VARS_DIR $INFRA_CONF_DIR/old/group_vars.$SUFFIX
-  cp -r $APP_CONF_FILE $APP_CONF_DIR/old/settings.yml.$SUFFIX
+  # 「2>/dev/null || :」 は次を参照
+  # https://serverfault.com/questions/153875/how-to-let-cp-command-dont-fire-an-error-when-source-file-does-not-exist
+  cp $INVENTORY $INFRA_CONF_DIR/old/inventory.$SUFFIX 2>/dev/null || :
+  cp -r $GROUP_VARS_DIR $INFRA_CONF_DIR/old/group_vars.$SUFFIX 2>/dev/null || :
+  cp -r $APP_CONF_FILE $APP_CONF_DIR/old/settings.yml.$SUFFIX 2>/dev/null || :
 }
 
 generate_deepops_conf(){
