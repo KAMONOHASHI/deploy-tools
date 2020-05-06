@@ -299,11 +299,30 @@ show_kqi_url(){
   echo "にアクセスしてください"
 }
 
-update(){
+update_app(){
   echo -e "アプリのアップデートを開始します"
   cd $HELM_DIR
   ./deploy-kqi-app.sh update
   echo -e "アプリのアップデートが完了しました"
+}
+
+update_node_conf(){
+  cd $DEEPOPS_DIR
+  ansible-playbook -l k8s-cluster kubespray/scale.yml
+  ansible-playbook -l k8s-cluster playbooks/k8s-cluster.yml
+}
+
+update(){
+  case $1 in
+    app) update_app ;;
+    node-conf) update_node_conf ;;
+    *)
+      echo "updateの引数は app, node-conf が指定可能です" >&2
+      echo "詳細は ${HELP_URL} で確認してください" >&2
+      echo "不明なupdateの引数: $1" >&2
+      exit 1
+    ;;
+  esac
 }
 
 # 呼び出しフォーマット: deploy <sub command> <deepopsのコマンドに渡す引数群(${@:2})>
@@ -337,12 +356,6 @@ deploy(){
   esac
 }
 
-scale(){
-  cd $DEEPOPS_DIR
-  ansible-playbook -l k8s-cluster kubespray/scale.yml
-  ansible-playbook -l k8s-cluster playbooks/k8s-cluster.yml
-}
-
 check(){
   echo "#Kubernetesの状態"
   kubectl version
@@ -365,10 +378,9 @@ Commands:
   prepare    構築に利用するツールのインストールを行います
   configure  構築の設定を行います
   deploy     構築します
-  update     アプリのアップデートを行います
+  update     アプリのアップデートまたはクラスタ設定の更新反映を行います
   clean      アンインストールします
   check      デプロイの状態確認を行います
-  scale      ノードの追加を行います
   help       このヘルプを表示します
 
 詳細は ${HELP_URL} で確認してください
@@ -387,7 +399,6 @@ main(){
     update) update ${@:2};;
     clean) clean ${@:2};;
     check) check ${@:2};;
-    scale) scale ${@:2};;
     help) show_help ;;
     *) show_help ;;
   esac
