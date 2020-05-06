@@ -1,4 +1,9 @@
 #!/bin/bash
+
+###
+#  定数定義
+###
+
 readonly SCRIPT_DIR=$(cd $(dirname $0); pwd)
 readonly GIT_TAG=$(cd $SCRIPT_DIR && git tag --points-at HEAD)
 readonly GIT_HASH=$(cd $SCRIPT_DIR && git rev-parse HEAD)
@@ -24,7 +29,13 @@ readonly GROUP_VARS_K8S=$GROUP_VARS_DIR/k8s-cluster.yml
 readonly APP_CONF_DIR=$HELM_DIR/conf
 readonly APP_CONF_FILE=$APP_CONF_DIR/settings.yml
 
-# 関数定義
+############################################################
+#  関数定義
+############################################################
+
+############
+#  入力関連
+############
 
 ask_ssh_user(){
   echo -en "\e[33mSSHで利用するユーザー名: \e[m"; read SSH_USER
@@ -77,6 +88,10 @@ get_ip(){
   fi
   echo $IP
 }
+
+############
+#  設定の生成と書き込み
+############
 
 # no_proxyを正しく設定していなかった場合でも動くようにKAMONOHASHIでno_proxyを設定する
 setup_no_proxy(){
@@ -193,6 +208,10 @@ generate_conf(){
   generate_helm_conf
 }
 
+############
+#  prepare関連
+############
+
 prepare_deepops(){
   cd $DEEPOPS_DIR
   ./scripts/setup.sh
@@ -208,6 +227,10 @@ prepare(){
   prepare_helm
 }
 
+############
+#  configure関連
+############
+
 configure(){
   case $1 in
     cluster)  
@@ -220,16 +243,14 @@ configure(){
       setup_no_proxy
       generate_conf
     ;;
-    *)
-      echo "configureの引数は cluster, single-node が指定可能です" >&2
-      echo "詳細は ${HELP_URL} で確認してください" >&2
-      echo "不明なconfigureの引数: $1" >&2
-      exit 1
-    ;;
+    *) show_unknown_arg "configure" "cluster, single-node" $1 ;;
   esac  
 
 }
 
+############
+#  clean関連
+############
 
 clean(){
   case $1 in
@@ -245,14 +266,13 @@ clean(){
       cd $DEEPOPS_DIR
       ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook kubespray/remove-node.yml --extra-vars "node=k8s-cluster" ${@:2}
     ;;
-    *)
-      echo "cleanの引数は all, app, nvidia-repo が指定可能です" >&2
-      echo "詳細は ${HELP_URL} で確認してください" >&2
-      echo "不明なcleanの引数: $1" >&2
-      exit 1
-    ;;
+    *) show_unknown_arg "clean" "all, app, nvidia-repo" $1 ;;
   esac
 }
+
+############
+#  deploy関連
+############
 
 deploy_nfs(){
   cd $DEEPOPS_DIR
@@ -293,38 +313,6 @@ deploy_kqi_helm(){
   ./deploy-kqi-app.sh deploy
 }
 
-show_kqi_url(){
-  local KQI_HOST=$(sed -rn 's/^kqi_node: "(.*)"$/\1/p' $APP_CONF_FILE)
-  echo "http://${KQI_HOST}"
-  echo "にアクセスしてください"
-}
-
-update_app(){
-  echo -e "アプリのアップデートを開始します"
-  cd $HELM_DIR
-  ./deploy-kqi-app.sh update
-  echo -e "アプリのアップデートが完了しました"
-}
-
-update_node_conf(){
-  cd $DEEPOPS_DIR
-  ansible-playbook -l k8s-cluster kubespray/scale.yml
-  ansible-playbook -l k8s-cluster playbooks/k8s-cluster.yml
-}
-
-update(){
-  case $1 in
-    app) update_app ;;
-    node-conf) update_node_conf ;;
-    *)
-      echo "updateの引数は app, node-conf が指定可能です" >&2
-      echo "詳細は ${HELP_URL} で確認してください" >&2
-      echo "不明なupdateの引数: $1" >&2
-      exit 1
-    ;;
-  esac
-}
-
 # 呼び出しフォーマット: deploy <sub command> <deepopsのコマンドに渡す引数群(${@:2})>
 deploy(){
   case $1 in
@@ -347,14 +335,38 @@ deploy(){
         echo -e "構築でエラーが発生しました"
       fi
       ;;
-    *)
-      echo "deployの引数は all, infra, nfs, k8s, app, nvidia-gpg-key が指定可能です" >&2
-      echo "詳細は ${HELP_URL} で確認してください" >&2
-      echo "不明なdeployの引数: $1" >&2
-      exit 1
-    ;;
+    *) show_unknown_arg "deploy" "all, infra, nfs, k8s, app, nvidia-gpg-key" $1 ;;
   esac
 }
+
+############
+#  update関連
+############
+
+update_app(){
+  echo -e "アプリのアップデートを開始します"
+  cd $HELM_DIR
+  ./deploy-kqi-app.sh update
+  echo -e "アプリのアップデートが完了しました"
+}
+
+update_node_conf(){
+  cd $DEEPOPS_DIR
+  ansible-playbook -l k8s-cluster kubespray/scale.yml
+  ansible-playbook -l k8s-cluster playbooks/k8s-cluster.yml
+}
+
+update(){
+  case $1 in
+    app) update_app ;;
+    node-conf) update_node_conf ;;
+    *) show_unknown_arg "update" "app, node-conf" $1 ;;
+  esac
+}
+
+############
+#  check関連
+############
 
 check(){
   echo "#Kubernetesの状態"
@@ -367,6 +379,23 @@ check(){
   helm status kamonohashi
 }
 
+############
+#  ヘルプメッセージ関連
+############
+
+show_kqi_url(){
+  local KQI_HOST=$(sed -rn 's/^kqi_node: "(.*)"$/\1/p' $APP_CONF_FILE)
+  echo "http://${KQI_HOST}"
+  echo "にアクセスしてください"
+}
+
+# 利用フォーマット: show_unknown_arg <サブコマンド名> <指定可能引数> <指定された引数>
+show_unknown_arg(){
+  echo "$1の引数は $2 が指定可能です" >&2
+  echo "詳細は ${HELP_URL} で確認してください" >&2
+  echo "不明な$1の引数: $3" >&2
+  exit 1  
+}
 
 show_help(){
 cat <<EOF
@@ -388,6 +417,10 @@ Commands:
 EOF
 }
 
+############
+#  メイン
+############
+
 main(){
   cd $SCRIPT_DIR
   load_proxy_conf
@@ -403,6 +436,10 @@ main(){
     *) show_help ;;
   esac
 }
+
+############################################################
+#  エントリーポイント
+############################################################
 
 mkdir -p $LOG_DIR
 echo "command: $0 $@" >> $LOG_FILE
