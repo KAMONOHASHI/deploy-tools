@@ -10,6 +10,7 @@ spec:
       app: platypus-web-api
   strategy:
     type: Recreate
+    rollingUpdate: null
   template:
     metadata:
       name: platypus-web-api
