@@ -19,6 +19,7 @@ spec:
       app: postgres
   strategy:
     type: Recreate
+    rollingUpdate: null
   template:
     metadata:
       name: postgres
