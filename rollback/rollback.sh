@@ -10,10 +10,10 @@ echo "-------------------------------------------------"
 echo -n "上記一覧より、戻したい時点のMigrationファイルを指定してください: "; read MIGRATION
 
 # デプロイされているKAMONOHASHIのクリーン
-/var/lib/kamonohashi/deploy-tools/$KQI_VERSION/kamonohashi/deploy-kqi.sh clean
+/var/lib/kamonohashi/deploy-tools/deploy-kamonohashi.sh clean app
 
 # KQIがデプロイされているノードのホスト名を取得
-KQI_NODE=`grep "kqi_node" /var/lib/kamonohashi/deploy-tools/$KQI_VERSION/kamonohashi/conf/settings.yml | awk '{print $2}' | sed s/\"//g`
+KQI_NODE=`grep "kqi_node" /var/lib/kamonohashi/deploy-tools/kamonohashi/conf/settings.yml | awk '{print $2}' | sed s/\"//g`
 
 # Postgresコンテナのデプロイ
 sed -e s/\"KQI_NODE\"/$KQI_NODE/ postgres.yml | kubectl apply -f -
@@ -36,9 +36,10 @@ sed -e s/\"KQI_NODE\"/$KQI_NODE/ postgres.yml | kubectl delete -f -
 echo "切り戻し処理完了"
 
 echo -e "デプロイ作業を行います。"
-echo "-----過去のバージョン一覧-----"
-ls -1 /var/lib/kamonohashi/deploy-tools/old/
+echo "-----デプロイツールのバージョン一覧-----"
+git -C /var/lib/kamonohashi/deploy-tools tag
 echo "------------------------------"
-echo -n "上記一覧より、デプロイしたいバージョンを指定してください: "; read DEPLOY_KQI_VERSION
-/var/lib/kamonohashi/deploy-tools/old/$DEPLOY_KQI_VERSION/kamonohashi/deploy-kqi.sh deploy
+echo -n "上記一覧より、利用するデプロイツールを指定してください: "; read DEPLOY_KQI_VERSION
+git -C /var/lib/kamonohashi/deploy-tools checkout $DEPLOY_KQI_VERSION
+/var/lib/kamonohashi/deploy-tools/deploy-kamonohashi.sh deploy app
 echo "KAMONOHASHI $DEPLOY_KQI_VERSION デプロイ完了"
