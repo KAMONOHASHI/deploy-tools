@@ -352,9 +352,9 @@ update_app(){
 
 update_node_conf(){
   cd $DEEPOPS_DIR
-  ansible-playbook -l all playbooks/nfs-client.yml
   ansible-playbook -l k8s-cluster kubespray/scale.yml
   ansible-playbook -l k8s-cluster playbooks/k8s-cluster.yml
+  ansible-playbook -l all playbooks/nfs-client.yml
 }
 
 update(){
