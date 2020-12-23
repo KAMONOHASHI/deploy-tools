@@ -4,15 +4,22 @@ metadata:
   name: nginx
   namespace: kqi-system
 spec:
+  replicas: 1
   selector:
     matchLabels:
       app: nginx 
   strategy:
     type: Recreate
+    rollingUpdate: null
   template:
     metadata:
+      name: reverse-proxy
       labels:
         app: nginx
+      annotations:
+        # アップデート時にPod再起動をかけるためのワークアラウンド
+        # configmapのみ変更だとPod再起動しないのでannotationを変更させる
+        timestamp: "{{ .Release.Time }}"
     spec:
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
