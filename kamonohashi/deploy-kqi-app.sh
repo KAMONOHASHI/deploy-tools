@@ -10,7 +10,7 @@ show_help() {
 prepare(){
     kubectl apply -f helm-rbac-config.yml
     curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get | bash /dev/stdin --version $HELM_VERSION
-    helm init --service-account tiller --upgrade --force-upgrade --wait
+    helm init --stable-repo-url https://charts.helm.sh/stable --service-account tiller --upgrade --force-upgrade --wait
     kubectl apply -f kqi-namespace.yml
 }
 
