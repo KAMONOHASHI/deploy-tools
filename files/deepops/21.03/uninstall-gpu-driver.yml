@@ -1,0 +1,9 @@
+- hosts: all
+  become: yes
+  tasks:
+  - name: uninstall cuda-drivers
+    apt: 
+      pkg: cuda-drivers
+      state: absent
+      autoremove: yes
+

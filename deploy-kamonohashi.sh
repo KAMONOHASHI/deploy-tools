@@ -15,8 +15,10 @@ readonly LOG_FILE=$LOG_DIR/deploy_$(date '+%Y%m%d-%H%M%S').log
 readonly HELP_URL="https://kamonohashi.ai/docs/install-and-update"
 
 readonly DEEPOPS_DIR=$SCRIPT_DIR/deepops
+readonly DEEPOPS_VER=21.03
 readonly HELM_DIR=$SCRIPT_DIR/kamonohashi
 readonly FILES_DIR=$SCRIPT_DIR/files
+readonly DEEPOPS_FILES_DIR=$FILES_DIR/deepops/$DEEPOPS_VER
 
 # deepopsの設定ファイル
 readonly INFRA_CONF_DIR=$DEEPOPS_DIR/config
@@ -50,7 +52,7 @@ ask_cluster_node_conf(){
 
 # コマンド実行前にユーザーにdeepops側にプロキシ設定させ、それを読み込む
 load_proxy_conf(){
-  . $DEEPOPS_DIR/scripts/proxy.sh
+  . $DEEPOPS_DIR/scripts/deepops/proxy.sh
 }
 
 ask_cluster_conf(){
@@ -139,9 +141,6 @@ EOF
 
 generate_deepops_vars(){
   # backup_old_conf関数でバックアップが取得済み想定で、ファイルを初期化する。
-  cp -f $FILES_DIR/deepops/all.yml $GROUP_VARS_ALL
-  cp -f $FILES_DIR/deepops/nfs-server.yml $GROUP_VARS_DIR
-  cp -f $FILES_DIR/deepops/k8s-cluster.yml $GROUP_VARS_K8S
   if [ ! -z "$https_proxy" ]; then
     append_deepops_proxy_conf
   fi
@@ -169,7 +168,7 @@ generate_deepops_inventory(){
   KUBE_NODES=$KUBE_NODES \
   NFS=$STORAGE \
   SSH_USER=$SSH_USER \
-  envsubst < $FILES_DIR/deepops/inventory.template > $INVENTORY
+  envsubst < $DEEPOPS_FILES_DIR/inventory.template > $INVENTORY
 }
 
 generate_helm_conf(){
@@ -260,11 +259,11 @@ clean(){
     ;;
     nvidia-repo)
       cd $DEEPOPS_DIR
-      ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook -l k8s-cluster $FILES_DIR/deepops/clean-nvidia-docker-repo.yml ${@:2}
+      ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook -l k8s-cluster $DEEPOPS_FILES/clean-nvidia-docker-repo.yml ${@:2}
     ;;
     all)
       cd $DEEPOPS_DIR
-      ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook kubespray/remove-node.yml --extra-vars "node=k8s-cluster" ${@:2}
+      ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook submodules/kubespray/remove-node.yml --extra-vars "node=all" ${@:2}
     ;;
     *) show_unknown_arg "clean" "all, app, nvidia-repo" $1 ;;
   esac
@@ -276,13 +275,14 @@ clean(){
 
 deploy_nfs(){
   cd $DEEPOPS_DIR
+  local NFS_PLAYBOOK_DIR=$DEEPOPS_FILES_DIR
   # nfs-clientを全てのノードに入れる
-  ansible-playbook -l all playbooks/nfs-client.yml
+  ansible-playbook -l all $NFS_PLAYBOOK_DIR/nfs-client.yml
 
   # エラー「ERROR! Specified hosts and/or --limit does not match any hosts」が出ればnfs-serverが指定されていないのでスキップ
-  ansible-playbook -l nfs-server --list-hosts playbooks/nfs-server.yml &> /dev/null
+  ansible-playbook -l nfs-server --list-hosts $NFS_PLAYBOOK_DIR/nfs-server.yml &> /dev/null
   if [ $? -eq 0 ]; then
-    ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook -l nfs-server playbooks/nfs-server.yml $@
+    ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook -l nfs-server $NFS_PLAYBOOK_DIR/nfs-server.yml $@
   else
     echo "inventoryにnfs-serverが指定されていないため、NFSサーバー構築をスキップします" |& tee -a $LOG_FILE
   fi
@@ -291,7 +291,7 @@ deploy_nfs(){
 # ansibleの更新チェック誤作動でgpgの更新が効かない場合に実行する
 deploy_nvidia_gpg(){
   cd $DEEPOPS_DIR
-  ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook -l k8s-cluster $FILES_DIR/deepops/update-latest-nvidia-gpg.yml $@
+  ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook -l k8s-cluster $DEEPOPS_FILES_DIR/update-latest-nvidia-gpg.yml $@
 }
 
 deploy_k8s(){
@@ -308,7 +308,7 @@ deploy_kqi_helm(){
     PASSWORD=$1
   fi
 
-  ./deploy-kqi-app.sh prepare &&
+  # ./deploy-kqi-app.sh prepare &&
   PASSWORD=$PASSWORD DB_PASSWORD=$PASSWORD STORAGE_PASSWORD=$PASSWORD ./deploy-kqi-app.sh credentials &&
   ./deploy-kqi-app.sh deploy
 }
