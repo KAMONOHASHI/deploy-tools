@@ -1,0 +1,6 @@
+k8s_deploy_nfs_server: false
+k8s_nfs_client_provisioner: false
+kube_enable_container_registry: false
+
+chrony_install: false
+ansible_python_interpreter: /usr/bin/python3
