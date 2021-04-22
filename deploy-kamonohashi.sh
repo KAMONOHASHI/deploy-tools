@@ -22,7 +22,7 @@ readonly DEEPOPS_FILES_DIR=$FILES_DIR/deepops/$DEEPOPS_VER
 # deepopsの設定ファイル
 readonly INFRA_CONF_DIR=$DEEPOPS_DIR/config
 readonly INVENTORY=$INFRA_CONF_DIR/inventory
-readonly EXTRA_VARS=$INFRA_CONF__DIR/settings.yml
+readonly EXTRA_VARS=$INFRA_CONF_DIR/settings.yml
 
 # KAMONOHASHI Helmの設定ファイル
 readonly APP_CONF_DIR=$HELM_DIR/conf
@@ -264,7 +264,7 @@ clean(){
     ;;
     all)
       cd $DEEPOPS_DIR
-      ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook submodules/kubespray/remove-node.yml --extra-vars "node=all" -e @$EXTRA_VARS ${@:2}
+      ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook submodules/kubespray/reset.yml -e @$EXTRA_VARS ${@:2}
     ;;
     *) show_unknown_arg "clean" "all, app, nvidia-repo" $1 ;;
   esac
