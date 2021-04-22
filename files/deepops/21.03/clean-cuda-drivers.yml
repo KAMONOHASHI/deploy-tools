@@ -1,4 +1,4 @@
-- hosts: all
+- hosts: kube-node
   become: yes
   tasks:
   - name: uninstall cuda-drivers
@@ -6,4 +6,5 @@
       pkg: cuda-drivers
       state: absent
       autoremove: yes
-
+  - name: reboot kube nodes
+    reboot:

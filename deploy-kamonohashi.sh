@@ -2,7 +2,6 @@
 ###
 #  定数定義
 ###
-
 readonly SCRIPT_DIR=$(cd $(dirname $0); pwd)
 readonly GIT_TAG=$(cd $SCRIPT_DIR && git tag --points-at HEAD)
 readonly GIT_HASH=$(cd $SCRIPT_DIR && git rev-parse HEAD)
@@ -171,6 +170,7 @@ generate_deepops_inventory(){
 }
 
 generate_helm_conf(){
+  mkdir -p $APP_CONF_DIR
   KQI_NODE=$KQI_NODE \
   NODES=${COMPUTE_NODES_COMMA} \
   OBJECT_STORAGE=$STORAGE \
@@ -187,7 +187,7 @@ generate_helm_conf(){
 
 backup_old_conf(){
   DATE=$(date +%Y%m%d-%H%M)
-  if [ -d $DEEPOPS_CONF_DIR ]; then
+  if [ -d $INFRA_CONF_DIR ]; then
     mkdir -p $DEEPOPS_DIR/old_config/$DATE
     mv $INFRA_CONF_DIR $DEEPOPS_DIR/old_config/$DATE
   fi
@@ -260,13 +260,17 @@ clean(){
     ;;
     nvidia-repo)
       cd $DEEPOPS_DIR
-      ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook -l k8s-cluster $DEEPOPS_FILES/clean-nvidia-docker-repo.yml -e @$EXTRA_VARS ${@:2}
+      ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook -l k8s-cluster $DEEPOPS_FILES_DIR/clean-nvidia-docker-repo.yml -e @$EXTRA_VARS ${@:2}
+    ;;
+    cuda-drivers)
+      cd $DEEPOPS_DIR
+      ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook -l k8s-cluster $DEEPOPS_FILES_DIR/clean-cuda-drivers.yml -e @$EXTRA_VARS ${@:2}
     ;;
     all)
       cd $DEEPOPS_DIR
       ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook submodules/kubespray/reset.yml -e @$EXTRA_VARS ${@:2}
     ;;
-    *) show_unknown_arg "clean" "all, app, nvidia-repo" $1 ;;
+    *) show_unknown_arg "clean" "all, app, nvidia-repo, cuda-drivers" $1 ;;
   esac
 }
 
