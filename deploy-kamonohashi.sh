@@ -262,15 +262,15 @@ clean(){
       cd $DEEPOPS_DIR
       ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook -l k8s-cluster $DEEPOPS_FILES_DIR/clean-nvidia-docker-repo.yml -e @$EXTRA_VARS ${@:2}
     ;;
-    cuda-drivers)
+    old-packages)
       cd $DEEPOPS_DIR
-      ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook -l k8s-cluster $DEEPOPS_FILES_DIR/clean-cuda-drivers.yml -e @$EXTRA_VARS ${@:2}
+      ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook -l k8s-cluster $DEEPOPS_FILES_DIR/clean-old-packages.yml -e @$EXTRA_VARS ${@:2}
     ;;
     all)
       cd $DEEPOPS_DIR
       ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook submodules/kubespray/reset.yml -e @$EXTRA_VARS ${@:2}
     ;;
-    *) show_unknown_arg "clean" "all, app, nvidia-repo, cuda-drivers" $1 ;;
+    *) show_unknown_arg "clean" "all, app, nvidia-repo, old-packages" $1 ;;
   esac
 }
 

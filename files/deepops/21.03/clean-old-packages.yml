@@ -1,0 +1,19 @@
+- hosts: all
+  become: yes
+  tasks:
+  - name: uninstall cuda-drivers
+    apt: 
+      pkg: cuda-drivers
+      state: absent
+      autoremove: yes
+  - name: uninstall nvidia packages
+    apt:
+      pkg: nvidia*
+      state: absent
+      autoremove: yes
+  - name: remove dirs which removed packages forget to delete
+    file:
+       path: /etc/docker/daemon.json
+       state: absent
+  - name: reboot kube nodes
+    reboot:
