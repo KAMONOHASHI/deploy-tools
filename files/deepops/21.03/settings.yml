@@ -1,6 +1,18 @@
+# KAMONOHASHIのデフォルト
+
+## NFSはDEEPOPSのものは使用しない
 k8s_deploy_nfs_server: false
 k8s_nfs_client_provisioner: false
-kube_enable_container_registry: false
 
+
+## NTPを書き換えない
 chrony_install: false
+
+## ansibleの実行にpython3を指定
 ansible_python_interpreter: /usr/bin/python3
+
+
+# 以下に追加の設定を記載
+
+
+

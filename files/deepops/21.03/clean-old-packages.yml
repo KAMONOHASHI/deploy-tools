@@ -5,11 +5,13 @@
     apt: 
       pkg: cuda-drivers
       state: absent
+      purge: yes
       autoremove: yes
   - name: uninstall nvidia packages
     apt:
       pkg: nvidia*
       state: absent
+      purge: yes
       autoremove: yes
   - name: remove dirs which removed packages forget to delete
     file:

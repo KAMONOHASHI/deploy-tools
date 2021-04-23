@@ -7,16 +7,22 @@ readonly GIT_TAG=$(cd $SCRIPT_DIR && git tag --points-at HEAD)
 readonly GIT_HASH=$(cd $SCRIPT_DIR && git rev-parse HEAD)
 readonly THIS_SCRIPT_VER=${GIT_TAG:-$GIT_HASH}
 
+readonly DATE=$(date '+%Y%m%d-%H%M%S')
+
 readonly LOG_DIR=/var/log/kamonohashi/deploy-tools
-readonly LOG_FILE=$LOG_DIR/deploy_$(date '+%Y%m%d-%H%M%S').log
+readonly LOG_FILE=$LOG_DIR/deploy_$DATE.log
 
 readonly HELP_URL="https://kamonohashi.ai/docs/install-and-update"
 
 readonly DEEPOPS_DIR=$SCRIPT_DIR/deepops
 readonly DEEPOPS_VER=21.03
+readonly OLD_DEEPOPS_VER=20.02.1
 readonly HELM_DIR=$SCRIPT_DIR/kamonohashi
 readonly FILES_DIR=$SCRIPT_DIR/files
 readonly DEEPOPS_FILES_DIR=$FILES_DIR/deepops/$DEEPOPS_VER
+readonly OLD_DEEPOPS_FILES_DIR=$FILES_DIR/deepops/$OLD_DEEPOPS_VER
+
+readonly TMP_DIR=/tmp/kamonohashi/$DATE
 
 # deepopsの設定ファイル
 readonly INFRA_CONF_DIR=$DEEPOPS_DIR/config
@@ -26,6 +32,8 @@ readonly EXTRA_VARS=$INFRA_CONF_DIR/settings.yml
 # KAMONOHASHI Helmの設定ファイル
 readonly APP_CONF_DIR=$HELM_DIR/conf
 readonly APP_CONF_FILE=$APP_CONF_DIR/settings.yml
+
+
 
 ############################################################
 #  関数定義
@@ -186,7 +194,6 @@ generate_helm_conf(){
 }
 
 backup_old_conf(){
-  DATE=$(date +%Y%m%d-%H%M)
   if [ -d $INFRA_CONF_DIR ]; then
     mkdir -p $DEEPOPS_DIR/old_config/$DATE
     mv $INFRA_CONF_DIR $DEEPOPS_DIR/old_config/$DATE
@@ -200,6 +207,21 @@ backup_old_conf(){
 generate_deepops_conf(){
   generate_deepops_vars
   generate_deepops_inventory
+}
+
+generate_verup_conf(){
+  cd $DEEPOPS_DIR
+  mkdir -p $TMP_DIR
+  python3 $SCRIPT_DIR/diff-yaml.py $INFRA_CONF_DIR/group_vars/all.yml $OLD_DEEPOPS_FILES_DIR/all.yml >> $TMP_DIR/deepops_settings.yml
+  python3 $SCRIPT_DIR/diff-yaml.py $INFRA_CONF_DIR/group_vars/k8s-cluster.yml $OLD_DEEPOPS_FILES_DIR/k8s-cluster.yml >> $TMP_DIR/deepops_settings.yml
+  cp $INVENTORY $TMP_DIR/inventory
+  cp $APP_CONF_FILE $TMP_DIR/kqi_settings.yml
+ 
+  generate_conf
+
+  cat $TMP_DIR/deepops_settings.yml >> $INFRA_CONF_DIR/settings.yml
+  cp -f $TMP_DIR/inventory $INVENTORY
+  cp -f $TMP_DIR/kqi_settings.yml $APP_CONF_FILE
 }
 
 generate_conf(){
@@ -243,7 +265,10 @@ configure(){
       setup_no_proxy
       generate_conf
     ;;
-    *) show_unknown_arg "configure" "cluster, single-node" $1 ;;
+    verup)
+      generate_verup_conf
+    ;;
+    *) show_unknown_arg "configure" "cluster, single-node, verup" $1 ;;
   esac  
 
 }
