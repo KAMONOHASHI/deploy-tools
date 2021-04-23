@@ -1,33 +1,39 @@
 #!/bin/bash
-
 ###
 #  定数定義
 ###
-
 readonly SCRIPT_DIR=$(cd $(dirname $0); pwd)
 readonly GIT_TAG=$(cd $SCRIPT_DIR && git tag --points-at HEAD)
 readonly GIT_HASH=$(cd $SCRIPT_DIR && git rev-parse HEAD)
 readonly THIS_SCRIPT_VER=${GIT_TAG:-$GIT_HASH}
 
+readonly DATE=$(date '+%Y%m%d-%H%M%S')
+
 readonly LOG_DIR=/var/log/kamonohashi/deploy-tools
-readonly LOG_FILE=$LOG_DIR/deploy_$(date '+%Y%m%d-%H%M%S').log
+readonly LOG_FILE=$LOG_DIR/deploy_$DATE.log
 
 readonly HELP_URL="https://kamonohashi.ai/docs/install-and-update"
 
 readonly DEEPOPS_DIR=$SCRIPT_DIR/deepops
+readonly DEEPOPS_VER=21.03
+readonly OLD_DEEPOPS_VER=20.02.1
 readonly HELM_DIR=$SCRIPT_DIR/kamonohashi
 readonly FILES_DIR=$SCRIPT_DIR/files
+readonly DEEPOPS_FILES_DIR=$FILES_DIR/deepops/$DEEPOPS_VER
+readonly OLD_DEEPOPS_FILES_DIR=$FILES_DIR/deepops/$OLD_DEEPOPS_VER
+
+readonly TMP_DIR=/tmp/kamonohashi/$DATE
 
 # deepopsの設定ファイル
 readonly INFRA_CONF_DIR=$DEEPOPS_DIR/config
 readonly INVENTORY=$INFRA_CONF_DIR/inventory
-readonly GROUP_VARS_DIR=$INFRA_CONF_DIR/group_vars
-readonly GROUP_VARS_ALL=$GROUP_VARS_DIR/all.yml
-readonly GROUP_VARS_K8S=$GROUP_VARS_DIR/k8s-cluster.yml
+readonly EXTRA_VARS=$INFRA_CONF_DIR/settings.yml
 
 # KAMONOHASHI Helmの設定ファイル
 readonly APP_CONF_DIR=$HELM_DIR/conf
 readonly APP_CONF_FILE=$APP_CONF_DIR/settings.yml
+
+
 
 ############################################################
 #  関数定義
@@ -50,7 +56,7 @@ ask_cluster_node_conf(){
 
 # コマンド実行前にユーザーにdeepops側にプロキシ設定させ、それを読み込む
 load_proxy_conf(){
-  . $DEEPOPS_DIR/scripts/proxy.sh
+  . $DEEPOPS_DIR/scripts/deepops/proxy.sh
 }
 
 ask_cluster_conf(){
@@ -113,7 +119,7 @@ setup_no_proxy(){
 # 本来deepoposのsetup.shで設定されるはずだが、バグで設定されないので
 # KAMONOHASHIで設定する。「http_proxyが存在するがhttps_proxyがない」ようなケースは想定しない
 append_deepops_proxy_conf(){
-cat <<EOF >> $GROUP_VARS_ALL
+cat <<EOF >> $EXTRA_VARS
 
 http_proxy: $http_proxy
 https_proxy: $https_proxy
@@ -139,9 +145,8 @@ EOF
 
 generate_deepops_vars(){
   # backup_old_conf関数でバックアップが取得済み想定で、ファイルを初期化する。
-  cp -f $FILES_DIR/deepops/all.yml $GROUP_VARS_ALL
-  cp -f $FILES_DIR/deepops/nfs-server.yml $GROUP_VARS_DIR
-  cp -f $FILES_DIR/deepops/k8s-cluster.yml $GROUP_VARS_K8S
+  cp -rfp $DEEPOPS_DIR/config.example $DEEPOPS_DIR/config
+  cp $DEEPOPS_$FILES_DIR/deepops/$DEEPOPS_VER/settings.yml $DEEPOPS_DIR/config/
   if [ ! -z "$https_proxy" ]; then
     append_deepops_proxy_conf
   fi
@@ -169,10 +174,11 @@ generate_deepops_inventory(){
   KUBE_NODES=$KUBE_NODES \
   NFS=$STORAGE \
   SSH_USER=$SSH_USER \
-  envsubst < $FILES_DIR/deepops/inventory.template > $INVENTORY
+  envsubst < $DEEPOPS_FILES_DIR/inventory.template > $INVENTORY
 }
 
 generate_helm_conf(){
+  mkdir -p $APP_CONF_DIR
   KQI_NODE=$KQI_NODE \
   NODES=${COMPUTE_NODES_COMMA} \
   OBJECT_STORAGE=$STORAGE \
@@ -188,18 +194,34 @@ generate_helm_conf(){
 }
 
 backup_old_conf(){
-  local SUFFIX=$(date +%Y%m%d)
-  mkdir -p $INFRA_CONF_DIR/old/ $APP_CONF_DIR/old/
-  # 「2>/dev/null || :」 は次を参照
-  # https://serverfault.com/questions/153875/how-to-let-cp-command-dont-fire-an-error-when-source-file-does-not-exist
-  cp $INVENTORY $INFRA_CONF_DIR/old/inventory.$SUFFIX 2>/dev/null || :
-  cp -r $GROUP_VARS_DIR $INFRA_CONF_DIR/old/group_vars.$SUFFIX 2>/dev/null || :
-  cp -r $APP_CONF_FILE $APP_CONF_DIR/old/settings.yml.$SUFFIX 2>/dev/null || :
+  if [ -d $INFRA_CONF_DIR ]; then
+    mkdir -p $DEEPOPS_DIR/old_config/$DATE
+    mv $INFRA_CONF_DIR $DEEPOPS_DIR/old_config/$DATE
+  fi
+  if [ -d $APP_CONF_DIR ]; then
+    mkdir -p $HELM_DIR/old_config/$DATE
+    cp -a $APP_CONF_DIR $HELM_DIR/old_config/$DATE
+  fi
 }
 
 generate_deepops_conf(){
-  generate_deepops_inventory
   generate_deepops_vars
+  generate_deepops_inventory
+}
+
+generate_verup_conf(){
+  cd $DEEPOPS_DIR
+  mkdir -p $TMP_DIR
+  python3 $SCRIPT_DIR/diff-yaml.py $INFRA_CONF_DIR/group_vars/all.yml $OLD_DEEPOPS_FILES_DIR/all.yml >> $TMP_DIR/deepops_settings.yml
+  python3 $SCRIPT_DIR/diff-yaml.py $INFRA_CONF_DIR/group_vars/k8s-cluster.yml $OLD_DEEPOPS_FILES_DIR/k8s-cluster.yml >> $TMP_DIR/deepops_settings.yml
+  cp $INVENTORY $TMP_DIR/inventory
+  cp $APP_CONF_FILE $TMP_DIR/kqi_settings.yml
+ 
+  generate_conf
+
+  cat $TMP_DIR/deepops_settings.yml >> $INFRA_CONF_DIR/settings.yml
+  cp -f $TMP_DIR/inventory $INVENTORY
+  cp -f $TMP_DIR/kqi_settings.yml $APP_CONF_FILE
 }
 
 generate_conf(){
@@ -243,7 +265,10 @@ configure(){
       setup_no_proxy
       generate_conf
     ;;
-    *) show_unknown_arg "configure" "cluster, single-node" $1 ;;
+    verup)
+      generate_verup_conf
+    ;;
+    *) show_unknown_arg "configure" "cluster, single-node, verup" $1 ;;
   esac  
 
 }
@@ -260,13 +285,17 @@ clean(){
     ;;
     nvidia-repo)
       cd $DEEPOPS_DIR
-      ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook -l k8s-cluster $FILES_DIR/deepops/clean-nvidia-docker-repo.yml ${@:2}
+      ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook -l k8s-cluster $DEEPOPS_FILES_DIR/clean-nvidia-docker-repo.yml -e @$EXTRA_VARS ${@:2}
+    ;;
+    old-packages)
+      cd $DEEPOPS_DIR
+      ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook -l k8s-cluster $DEEPOPS_FILES_DIR/clean-old-packages.yml -e @$EXTRA_VARS ${@:2}
     ;;
     all)
       cd $DEEPOPS_DIR
-      ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook kubespray/remove-node.yml --extra-vars "node=k8s-cluster" ${@:2}
+      ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook submodules/kubespray/reset.yml -e @$EXTRA_VARS ${@:2}
     ;;
-    *) show_unknown_arg "clean" "all, app, nvidia-repo" $1 ;;
+    *) show_unknown_arg "clean" "all, app, nvidia-repo, old-packages" $1 ;;
   esac
 }
 
@@ -276,13 +305,14 @@ clean(){
 
 deploy_nfs(){
   cd $DEEPOPS_DIR
+  local NFS_PLAYBOOK_DIR=$DEEPOPS_FILES_DIR
   # nfs-clientを全てのノードに入れる
-  ansible-playbook -l all playbooks/nfs-client.yml
+  ansible-playbook -l all $NFS_PLAYBOOK_DIR/nfs-client.yml -e @$EXTRA_VARS
 
   # エラー「ERROR! Specified hosts and/or --limit does not match any hosts」が出ればnfs-serverが指定されていないのでスキップ
-  ansible-playbook -l nfs-server --list-hosts playbooks/nfs-server.yml &> /dev/null
+  ansible-playbook -l nfs-server --list-hosts $NFS_PLAYBOOK_DIR/nfs-server.yml &> /dev/null
   if [ $? -eq 0 ]; then
-    ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook -l nfs-server playbooks/nfs-server.yml $@
+    ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook -l nfs-server $NFS_PLAYBOOK_DIR/nfs-server.yml -e @$EXTRA_VARS $@
   else
     echo "inventoryにnfs-serverが指定されていないため、NFSサーバー構築をスキップします" |& tee -a $LOG_FILE
   fi
@@ -291,12 +321,12 @@ deploy_nfs(){
 # ansibleの更新チェック誤作動でgpgの更新が効かない場合に実行する
 deploy_nvidia_gpg(){
   cd $DEEPOPS_DIR
-  ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook -l k8s-cluster $FILES_DIR/deepops/update-latest-nvidia-gpg.yml $@
+  ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook -l k8s-cluster $DEEPOPS_FILES_DIR/update-latest-nvidia-gpg.yml -e @$EXTRA_VARS $@
 }
 
 deploy_k8s(){
   cd $DEEPOPS_DIR
-  ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook -l k8s-cluster playbooks/k8s-cluster.yml $@
+  ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook -l k8s-cluster playbooks/k8s-cluster.yml -e @$EXTRA_VARS $@
 }
 
 deploy_kqi_helm(){
@@ -308,7 +338,7 @@ deploy_kqi_helm(){
     PASSWORD=$1
   fi
 
-  ./deploy-kqi-app.sh prepare &&
+  # ./deploy-kqi-app.sh prepare &&
   PASSWORD=$PASSWORD DB_PASSWORD=$PASSWORD STORAGE_PASSWORD=$PASSWORD ./deploy-kqi-app.sh credentials &&
   ./deploy-kqi-app.sh deploy
 }

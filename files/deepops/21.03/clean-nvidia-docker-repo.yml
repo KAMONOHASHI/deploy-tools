@@ -1,0 +1,10 @@
+- hosts: kube-node
+  become: true
+  become_method: sudo
+  gather_facts: no # ref. https://htnosm.hatenablog.com/entry/2017/07/30/090000
+  tasks:
+    - name: remove nvidia repo
+      file:
+        path: /etc/apt/sources.list.d/nvidia-docker.list
+        state: absent
+      ignore_errors: true
