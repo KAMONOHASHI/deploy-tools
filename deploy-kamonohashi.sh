@@ -287,15 +287,22 @@ clean(){
       cd $DEEPOPS_DIR
       ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook -l k8s-cluster $DEEPOPS_FILES_DIR/clean-nvidia-docker-repo.yml -e @$EXTRA_VARS ${@:2}
     ;;
-    old-packages)
-      cd $DEEPOPS_DIR
-      ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook -l k8s-cluster $DEEPOPS_FILES_DIR/clean-old-packages.yml -e @$EXTRA_VARS ${@:2}
-    ;;
     all)
       cd $DEEPOPS_DIR
-      ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook submodules/kubespray/reset.yml -e @$EXTRA_VARS ${@:2}
+      read -p "クラスタ全体のアンインストールを実行してよいですか? (y/n): " YN
+      if [ "${YN}" != "y" ]; then
+          echo "アンインストールを中止します"
+          exit 1
+      fi
+      NODES=$(ansible all --list-hosts | tail -n +2 | tr -d ' ' | tr '\n' ',')
+      ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook -l k8s-cluster submodules/kubespray/remove-node.yml -e "node=$NODES" -e "delete_nodes_confirmation='yes'" -e @$EXTRA_VARS ${@:2} || true
+      ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook -l k8s-cluster $DEEPOPS_FILES_DIR/post-clean-all.yml -e "kubespray_dir='/var/lib/kamonohashi/deploy-tools/deepops/submodules/kubespray/'" -e @$EXTRA_VARS ${@:2}
     ;;
-    *) show_unknown_arg "clean" "all, app, nvidia-repo, old-packages" $1 ;;
+    nvidia-packages)
+      cd $DEEPOPS_DIR
+      ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook -l k8s-cluster $DEEPOPS_FILES_DIR/clean-nvidia-packages.yml -e @$EXTRA_VARS ${@:2}
+    ;;
+    *) show_unknown_arg "clean" "all, app, nvidia-repo, nvidia-packages" $1 ;;
   esac
 }
 
@@ -327,6 +334,8 @@ deploy_nvidia_gpg(){
 deploy_k8s(){
   cd $DEEPOPS_DIR
   ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook -l k8s-cluster playbooks/k8s-cluster.yml -e @$EXTRA_VARS $@
+  # kubelet_rotate_server_certificates: true の場合、kubectl certificate approveが必要
+  update_kube_certs
 }
 
 deploy_kqi_helm(){
@@ -387,13 +396,24 @@ update_node_conf(){
   ansible-playbook -l all playbooks/nfs-client.yml
 }
 
+update_kube_certs(){
+  # kubelet serving 証明書の承認
+  # https://kubernetes.io/docs/reference/command-line-tools-reference/kubelet-tls-bootstrapping/#client-and-serving-certificates
+  kubectl get csr -o name | xargs -I {} kubectl certificate approve {}
+  # masterの証明書更新
+  kubeadm alpha certs renew all
+}
+
 update(){
   case $1 in
     app) update_app ;;
     node-conf) update_node_conf ;;
-    *) show_unknown_arg "update" "app, node-conf" $1 ;;
+    kube-certs) update_kube_certs;;
+    *) show_unknown_arg "update" "app, node-conf, kube-certs" $1 ;;
   esac
 }
+
+
 
 ############
 #  check関連

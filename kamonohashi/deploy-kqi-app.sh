@@ -33,7 +33,7 @@ update(){
 }
 
 clean(){
-    helm delete --purge kamonohashi
+    helm delete kamonohashi
 }
 
 main(){
