@@ -11,6 +11,12 @@ chrony_install: false
 ## ansibleの実行にpython3を指定
 ansible_python_interpreter: /usr/bin/python3
 
+## kubelet 証明書更新
+kubelet_rotate_certificates: true
+kubelet_rotate_server_certificates: true
+
+## kube_proxy_modeをiptablesに。性能より安定性を優先
+kube_proxy_mode: iptables
 
 # 以下に追加の設定を記載
 
