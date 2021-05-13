@@ -221,7 +221,7 @@ generate_verup_conf(){
   generate_conf
 
   # 重複を消すために空のyamlと比較して結果を書き込む
-  python3 files/diff-yaml.py $TMP_DIR/deepops_settings.yml <(echo "{}") >> $INFRA_CONF_DIR/settings.yml 
+  python3 $FILES_DIR/diff-yaml.py $TMP_DIR/deepops_settings.yml <(echo "{}") >> $INFRA_CONF_DIR/settings.yml 
   cp -f $TMP_DIR/inventory $INVENTORY
   cp -f $TMP_DIR/kqi_settings.yml $APP_CONF_FILE
 }
