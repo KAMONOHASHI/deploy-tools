@@ -295,8 +295,8 @@ clean(){
           exit 1
       fi
       NODES=$(ansible all --list-hosts | tail -n +2 | tr -d ' ' | tr '\n' ',')
-      ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook -l k8s-cluster submodules/kubespray/remove-node.yml -e "node=$NODES" -e "delete_nodes_confirmation='yes'" -e @$EXTRA_VARS ${@:2} || true
-      ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook -l k8s-cluster $DEEPOPS_FILES_DIR/post-clean-all.yml -e "kubespray_dir='/var/lib/kamonohashi/deploy-tools/deepops/submodules/kubespray/'" -e @$EXTRA_VARS ${@:2}
+      ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook submodules/kubespray/remove-node.yml -e "node=$NODES" -e "delete_nodes_confirmation='yes'" -e @$EXTRA_VARS ${@:2} || true
+      ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook $DEEPOPS_FILES_DIR/post-clean-all.yml -e "node=$NODES" -e "kubespray_dir='/var/lib/kamonohashi/deploy-tools/deepops/submodules/kubespray/'" -e @$EXTRA_VARS ${@:2}
     ;;
     nvidia-packages)
       cd $DEEPOPS_DIR
