@@ -212,8 +212,8 @@ generate_deepops_conf(){
 generate_verup_conf(){
   cd $DEEPOPS_DIR
   mkdir -p $TMP_DIR
-  python3 $SCRIPT_DIR/diff-yaml.py $INFRA_CONF_DIR/group_vars/all.yml $OLD_DEEPOPS_FILES_DIR/all.yml >> $TMP_DIR/deepops_settings.yml
-  python3 $SCRIPT_DIR/diff-yaml.py $INFRA_CONF_DIR/group_vars/k8s-cluster.yml $OLD_DEEPOPS_FILES_DIR/k8s-cluster.yml >> $TMP_DIR/deepops_settings.yml
+  python3 $FILES_DIR/diff-yaml.py $INFRA_CONF_DIR/group_vars/all.yml $OLD_DEEPOPS_FILES_DIR/all.yml >> $TMP_DIR/deepops_settings.yml
+  python3 $FILES_DIR/diff-yaml.py $INFRA_CONF_DIR/group_vars/k8s-cluster.yml $OLD_DEEPOPS_FILES_DIR/k8s-cluster.yml >> $TMP_DIR/deepops_settings.yml
   cp $INVENTORY $TMP_DIR/inventory
   cp $APP_CONF_FILE $TMP_DIR/kqi_settings.yml
  
