@@ -212,8 +212,8 @@ generate_deepops_conf(){
 generate_verup_conf(){
   cd $DEEPOPS_DIR
   mkdir -p $TMP_DIR
-  python3 $SCRIPT_DIR/diff-yaml.py $INFRA_CONF_DIR/group_vars/all.yml $OLD_DEEPOPS_FILES_DIR/all.yml >> $TMP_DIR/deepops_settings.yml
-  python3 $SCRIPT_DIR/diff-yaml.py $INFRA_CONF_DIR/group_vars/k8s-cluster.yml $OLD_DEEPOPS_FILES_DIR/k8s-cluster.yml >> $TMP_DIR/deepops_settings.yml
+  python3 $FILES_DIR/diff-yaml.py $INFRA_CONF_DIR/group_vars/all.yml $OLD_DEEPOPS_FILES_DIR/all.yml >> $TMP_DIR/deepops_settings.yml
+  python3 $FILES_DIR/diff-yaml.py $INFRA_CONF_DIR/group_vars/k8s-cluster.yml $OLD_DEEPOPS_FILES_DIR/k8s-cluster.yml >> $TMP_DIR/deepops_settings.yml
   cp $INVENTORY $TMP_DIR/inventory
   cp $APP_CONF_FILE $TMP_DIR/kqi_settings.yml
  
@@ -295,8 +295,8 @@ clean(){
           exit 1
       fi
       NODES=$(ansible all --list-hosts | tail -n +2 | tr -d ' ' | tr '\n' ',')
-      ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook -l k8s-cluster submodules/kubespray/remove-node.yml -e "node=$NODES" -e "delete_nodes_confirmation='yes'" -e @$EXTRA_VARS ${@:2} || true
-      ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook -l k8s-cluster $DEEPOPS_FILES_DIR/post-clean-all.yml -e "kubespray_dir='/var/lib/kamonohashi/deploy-tools/deepops/submodules/kubespray/'" -e @$EXTRA_VARS ${@:2}
+      ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook submodules/kubespray/remove-node.yml -e "node=$NODES" -e "delete_nodes_confirmation='yes'" -e @$EXTRA_VARS ${@:2} || true
+      ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook $DEEPOPS_FILES_DIR/post-clean-all.yml -e "node=$NODES" -e "kubespray_dir='/var/lib/kamonohashi/deploy-tools/deepops/submodules/kubespray/'" -e @$EXTRA_VARS ${@:2}
     ;;
     nvidia-packages)
       cd $DEEPOPS_DIR

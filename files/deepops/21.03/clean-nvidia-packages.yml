@@ -13,7 +13,7 @@
       state: absent
       purge: yes
       autoremove: yes
-  - name: remove dirs which removed packages forget to delete
+  - name: remove docker daemon.json which has nvidia runtime config
     file:
        path: /etc/docker/daemon.json
        state: absent
