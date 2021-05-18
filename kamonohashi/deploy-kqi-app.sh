@@ -33,7 +33,7 @@ update(){
 }
 
 clean(){
-    helm delete kamonohashi
+    helm delete --namespace kqi-system kamonohashi
 }
 
 main(){
