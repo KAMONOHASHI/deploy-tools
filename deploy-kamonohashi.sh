@@ -301,7 +301,11 @@ clean(){
           exit 1
       fi
       NODES=$(ansible all --list-hosts | tail -n +2 | tr -d ' ' | tr '\n' ',')
+      # deepopsの指示しているアンインストール方法
       ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook submodules/kubespray/remove-node.yml -e "node=$NODES" -e "delete_nodes_confirmation='yes'" -e @$EXTRA_VARS ${@:2} || true
+      # kubespray本来のアンインストール方法。deepopsの指示しているアンインストール方法ではアンインストールに失敗するケースがあるため実行
+      ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook submodules/kubespray/reset.yml -e "delete_nodes_confirmation='yes'" -e @$EXTRA_VARS ${@:2} || true
+      # 上記2つでも途中でエラーになりアンインストールに失敗するケースがあるため、エラー箇所以降を抜粋したplaybookを実行
       ANSIBLE_LOG_PATH=$LOG_FILE ansible-playbook $DEEPOPS_FILES_DIR/post-clean-all.yml -e "node=$NODES" -e "kubespray_dir='/var/lib/kamonohashi/deploy-tools/deepops/submodules/kubespray/'" -e @$EXTRA_VARS ${@:2}
     ;;
     nvidia-packages)
