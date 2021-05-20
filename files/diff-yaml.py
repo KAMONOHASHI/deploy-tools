@@ -29,7 +29,7 @@ def main():
         with open(args.comp_yaml_path, mode='r') as comp_yaml_file:
             base_yaml = yaml.safe_load(base_yaml_file)
             comp_yaml = yaml.safe_load(comp_yaml_file)
-            result = extract_diff_prop(base_yaml, comp_yaml)
+            result = extract_diff_prop(base_yaml or {}, comp_yaml or {})
     
     if result != {}:
         print(yaml.dump(result, default_flow_style=False))
