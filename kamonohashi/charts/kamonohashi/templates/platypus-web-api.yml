@@ -47,7 +47,6 @@ spec:
       containers:
         - name: platypus-web-api
           image: kamonohashi/web-api:{{ .Values.image_tag | default .Chart.Version }}
-          imagePullPolicy: Always
           resources:
             limits:
               cpu: {{ .Values.resources.platypus_web_api.cpu }}

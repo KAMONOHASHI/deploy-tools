@@ -1,20 +1,14 @@
 #!/bin/bash
 
-readonly HELM_VERSION="v2.16.1"
 readonly SCRIPT_DIR=$(cd $(dirname $0); pwd)
 
 show_help() {
     echo "available args: prepare, deploy, clean, update, credentials, upgrade, help"
 }
 
-prepare(){
-    kubectl apply -f helm-rbac-config.yml
-    curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get | bash /dev/stdin --version $HELM_VERSION
-    helm init --stable-repo-url https://charts.helm.sh/stable --service-account tiller --upgrade --force-upgrade --wait
-    kubectl apply -f kqi-namespace.yml
-}
 
-set_credentials(){
+set_credentials(){   
+    kubectl apply -f kqi-namespace.yml
     if [ -z "$PASSWORD" ] || [ -z "$DB_PASSWORD" ] || [ -z "$STORAGE_PASSWORD" ]; then
       echo -en "\e[33mAdmin Passwordを入力: \e[m"; read -s PASSWORD
       echo -en "\n\e[33mDB Passwordを入力: \e[m"; read -s DB_PASSWORD
@@ -26,6 +20,7 @@ set_credentials(){
 }
 
 deploy(){
+    kubectl apply -f kqi-namespace.yml
     helm upgrade kamonohashi charts/kamonohashi -f conf/settings.yml -i --namespace kqi-system --wait
 }
 
@@ -38,7 +33,7 @@ update(){
 }
 
 clean(){
-    helm delete --purge kamonohashi
+    helm delete --namespace kqi-system kamonohashi
 }
 
 main(){

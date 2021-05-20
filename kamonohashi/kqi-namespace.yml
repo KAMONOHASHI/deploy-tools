@@ -2,3 +2,9 @@ kind: Namespace
 apiVersion: v1
 metadata:
   name: kqi-system
+  labels:
+    app.kubernetes.io/name: platypus-namespace
+    app.kubernetes.io/instance: platypus-namespace
+    app.kubernetes.io/component: namespace
+    app.kubernetes.io/part-of: kamonohashi
+    app.kubernetes.io/managed-by: helm
