@@ -403,9 +403,9 @@ update_app(){
 
 update_node_conf(){
   cd $DEEPOPS_DIR
-  ansible-playbook -l k8s-cluster kubespray/scale.yml
-  ansible-playbook -l k8s-cluster playbooks/k8s-cluster.yml
-  ansible-playbook -l all playbooks/nfs-client.yml
+  ansible-playbook -l k8s-cluster submodules/kubespray/scale.yml -e @$EXTRA_VARS $@
+  ansible-playbook -l k8s-cluster playbooks/k8s-cluster.yml -e @$EXTRA_VARS $@
+  ansible-playbook -l all $DEEPOPS_FILES_DIR/nfs-client.yml -e @$EXTRA_VARS $@
 }
 
 update_kube_certs(){
@@ -419,7 +419,7 @@ update_kube_certs(){
 update(){
   case $1 in
     app) update_app ;;
-    node-conf) update_node_conf ;;
+    node-conf) update_node_conf ${@:2} ;;
     kube-certs) update_kube_certs;;
     *) show_unknown_arg "update" "app, node-conf, kube-certs" $1 ;;
   esac
