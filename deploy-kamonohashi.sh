@@ -421,12 +421,13 @@ set_credentials(){
     storage)
       update_storage_password ;;
     db)
-       ;;
+      update_db_password ;;
     all)
       echo -en "Admin Passwordを入力: "; read -s PASSWORD
       echo "" # read -s は改行しないため、echoで改行
-      
+
       set_storage_credentials $PASSWORD
+      set_db_credentials $PASSWORD
       ;;
     *)
       show_unknown_arg "password" "storage, db, all" $1 ;;
@@ -446,6 +447,28 @@ set_storage_credentials(){
   STORAGE_PASSWORD=$STORAGE_PASSWORD ./deploy-kqi-app.sh credentials
   # Podを再起動
   kubectl rollout restart deploy minio --namespace kqi-system
+}
+
+set_db_credentials(){
+  cd $HELM_DIR
+  if [ -z "$1" ]; then
+    echo -en "\n\e[33mDB Passwordを入力: \e[m"; read -s DB_PASSWORD
+    echo "" # read -s は改行しないため、echoで改行
+  else
+    DB_PASSWORD=$1
+  fi
+
+  # PostgreDBのPod名を取得
+  POD_NAME=`kubectl get pods --no-headers -o custom-columns=":metadata.name" --namespace kqi-system | grep postgres`
+  # Pod内でSQLコマンド実行
+  kubectl exec $POD_NAME -it --namespace kqi-system -- /bin/sh -c "\
+    psql -U platypus -d platypusdb -w -c \"ALTER USER platypus WITH PASSWORD '$DB_PASSWORD'\";
+  "
+  # credentials更新
+  DB_PASSWORD=$DB_PASSWORD ./deploy-kqi-app.sh credentials
+  # Podを再起動
+  kubectl rollout restart deploy postgres --namespace kqi-system
+  kubectl rollout restart deploy platypus-web-api --namespace kqi-system
 }
 
 update(){
