@@ -442,6 +442,13 @@ set_storage_credentials(){
   STORAGE_PASSWORD=$STORAGE_PASSWORD ./deploy-kqi-app.sh credentials
   # Podを再起動
   kubectl rollout restart deploy minio --namespace kqi-system
+
+  echo "ストレージの認証情報を更新しました"
+  echo "KAMONOHASHIのDBに保管されているストレージの接続情報をストレージ管理画面から適宜変更してください"
+}
+
+set_platypus_credentials(){
+  echo "KAMONOHASHIのAdminユーザのパスワードについてはユーザ管理画面から適宜変更してください"
 }
 
 set_db_credentials(){
@@ -464,6 +471,8 @@ set_db_credentials(){
   # Podを再起動
   kubectl rollout restart deploy postgres --namespace kqi-system
   kubectl rollout restart deploy platypus-web-api --namespace kqi-system
+
+  echo "DBの認証情報を更新しました"
 }
 
 set_credentials(){
@@ -478,6 +487,7 @@ set_credentials(){
 
       set_db_credentials $PASSWORD
       set_storage_credentials $PASSWORD
+      set_platypus_credentials
       ;;
     *)
       show_unknown_arg "credentials" "storage, db, all" $1 ;;
