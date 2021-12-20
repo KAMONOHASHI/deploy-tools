@@ -416,12 +416,45 @@ update_kube_certs(){
   kubeadm alpha certs renew all
 }
 
+set_credentials(){
+  case $1 in
+    storage)
+      update_storage_password ;;
+    db)
+       ;;
+    all)
+      echo -en "Admin Passwordを入力: "; read -s PASSWORD
+      echo "" # read -s は改行しないため、echoで改行
+      
+      set_storage_credentials $PASSWORD
+      ;;
+    *)
+      show_unknown_arg "password" "storage, db, all" $1 ;;
+  esac
+}
+
+set_storage_credentials(){
+  cd $HELM_DIR
+  if [ -z "$1" ]; then
+    echo -en "\n\e[33mStorage Secret Keyを入力: \e[m"; read -s STORAGE_PASSWORD
+    echo "" # read -s は改行しないため、echoで改行
+  else
+    STORAGE_PASSWORD=$1
+  fi
+
+  # credentials更新
+  STORAGE_PASSWORD=$STORAGE_PASSWORD ./deploy-kqi-app.sh credentials
+  # Podを再起動
+  kubectl rollout restart deploy minio --namespace kqi-system
+}
+
 update(){
   case $1 in
     app) update_app ;;
     node-conf) update_node_conf ${@:2} ;;
     kube-certs) update_kube_certs;;
-    *) show_unknown_arg "update" "app, node-conf, kube-certs" $1 ;;
+    credentials) set_credentials ${@:2};;
+    *) show_unknown_arg "update" "app, node-conf, kube-certs, credentials" $1 ;;
   esac
 }
 
