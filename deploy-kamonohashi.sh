@@ -416,23 +416,18 @@ update_kube_certs(){
   kubeadm alpha certs renew all
 }
 
-set_credentials(){
+update(){
   case $1 in
-    storage)
-      update_storage_password ;;
-    db)
-      update_db_password ;;
-    all)
-      echo -en "Admin Passwordを入力: "; read -s PASSWORD
-      echo "" # read -s は改行しないため、echoで改行
-
-      set_storage_credentials $PASSWORD
-      set_db_credentials $PASSWORD
-      ;;
-    *)
-      show_unknown_arg "password" "storage, db, all" $1 ;;
+    app) update_app ;;
+    node-conf) update_node_conf ${@:2} ;;
+    kube-certs) update_kube_certs;;
+    *) show_unknown_arg "update" "app, node-conf, kube-certs" $1 ;;
   esac
 }
+
+############
+#  credentials関連
+############
 
 set_storage_credentials(){
   cd $HELM_DIR
@@ -471,17 +466,23 @@ set_db_credentials(){
   kubectl rollout restart deploy platypus-web-api --namespace kqi-system
 }
 
-update(){
+set_credentials(){
   case $1 in
-    app) update_app ;;
-    node-conf) update_node_conf ${@:2} ;;
-    kube-certs) update_kube_certs;;
-    credentials) set_credentials ${@:2};;
-    *) show_unknown_arg "update" "app, node-conf, kube-certs, credentials" $1 ;;
+    storage)
+      set_storage_credentials ;;
+    db)
+      set_db_credentials ;;
+    all)
+      echo -en "Admin Passwordを入力: "; read -s PASSWORD
+      echo "" # read -s は改行しないため、echoで改行
+
+      set_db_credentials $PASSWORD
+      set_storage_credentials $PASSWORD
+      ;;
+    *)
+      show_unknown_arg "credentials" "storage, db, all" $1 ;;
   esac
 }
-
-
 
 ############
 #  check関連
@@ -523,13 +524,14 @@ Usage: ./deploy-kamonohashi.sh COMMAND [ARGS] [OPTIONS]
   KAMONOHASHI デプロイスクリプト: ${THIS_SCRIPT_VER}
 
 Commands:
-  prepare    構築に利用するツールのインストールを行います
-  configure  構築の設定を行います
-  deploy     構築します
-  update     アプリのアップデートまたはクラスタ設定の更新反映を行います
-  clean      アンインストールします
-  check      デプロイの状態確認を行います
-  help       このヘルプを表示します
+  prepare     構築に利用するツールのインストールを行います
+  configure   構築の設定を行います
+  deploy      構築します
+  update      アプリのアップデートまたはクラスタ設定の更新反映を行います
+  clean       アンインストールします
+  credentials 認証情報の設定を行います
+  check       デプロイの状態確認を行います
+  help        このヘルプを表示します
 
 詳細は ${HELP_URL} で確認してください
 
@@ -550,6 +552,7 @@ main(){
     deploy) deploy ${@:2};;
     update) update ${@:2};;
     clean) clean ${@:2};;
+    credentials) set_credentials ${@:2};;
     check) check ${@:2};;
     help) show_help ;;
     *) show_help ;;
