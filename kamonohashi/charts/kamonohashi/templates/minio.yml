@@ -41,7 +41,7 @@ spec:
         - nas
         - /data
         env:
-        - name: MINIO_ACCESS_KEY
+        - name: MINIO_ROOT_USER
           value: {{.Values.appsettings.DeployOptions__ObjectStorageAccessKey}}
         envFrom:
         - secretRef:
