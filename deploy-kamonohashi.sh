@@ -468,7 +468,7 @@ set_storage_credentials(){
   kubectl rollout restart deploy minio --namespace kqi-system
 
   echo -e "\nストレージの認証情報を更新しました"
-  echo "KAMONOHASHIのDBに保管されているストレージの接続情報をストレージ管理画面から適宜変更してください"
+  echo "KAMONOHASHIのDBに保管されているストレージの接続情報はストレージ管理画面から適宜変更してください"
 }
 
 set_platypus_credentials(){
