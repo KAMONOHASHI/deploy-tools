@@ -432,7 +432,7 @@ update(){
 set_db_credentials(){
   cd $HELM_DIR
   if [ -z "$1" ]; then
-    echo -en "\n\e[33mDB Passwordを入力: \e[m"; read -s DB_PASSWORD
+    echo -en "\e[33m新しいDB Passwordを入力: \e[m"; read -s DB_PASSWORD
     echo "" # read -s は改行しないため、echoで改行
   else
     DB_PASSWORD=$1
@@ -450,13 +450,13 @@ set_db_credentials(){
   kubectl rollout restart deploy postgres --namespace kqi-system
   kubectl rollout restart deploy platypus-web-api --namespace kqi-system
 
-  echo "DBの認証情報を更新しました"
+  echo -e "\nDBの認証情報を更新しました"
 }
 
 set_storage_credentials(){
   cd $HELM_DIR
   if [ -z "$1" ]; then
-    echo -en "\n\e[33mStorage Secret Keyを入力: \e[m"; read -s STORAGE_PASSWORD
+    echo -en "\e[33m新しいStorage Secret Keyを入力: \e[m"; read -s STORAGE_PASSWORD
     echo "" # read -s は改行しないため、echoで改行
   else
     STORAGE_PASSWORD=$1
@@ -467,12 +467,12 @@ set_storage_credentials(){
   # Podを再起動
   kubectl rollout restart deploy minio --namespace kqi-system
 
-  echo "ストレージの認証情報を更新しました"
+  echo -e "\nストレージの認証情報を更新しました"
   echo "KAMONOHASHIのDBに保管されているストレージの接続情報をストレージ管理画面から適宜変更してください"
 }
 
 set_platypus_credentials(){
-  echo "KAMONOHASHIのAdminユーザのパスワードについてはユーザ管理画面から適宜変更してください"
+  echo -e "\nKAMONOHASHIのAdminユーザのパスワードについてはユーザ管理画面から適宜変更してください"
 }
 
 set_credentials(){
@@ -482,7 +482,7 @@ set_credentials(){
     db)
       set_db_credentials ;;
     all)
-      echo -en "Admin Passwordを入力: "; read -s PASSWORD
+      echo -en "\e[33m新しいAdmin Passwordを入力: \e[m"; read -s PASSWORD
       echo "" # read -s は改行しないため、echoで改行
 
       set_db_credentials $PASSWORD
