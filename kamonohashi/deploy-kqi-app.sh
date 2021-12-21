@@ -10,16 +10,16 @@ set_credentials(){
     kubectl apply -f kqi-namespace.yml
     # パスワードが未指定のものは、既にSecretに設定されているパスワードを設定する
     if [ -z "$PASSWORD" ]; then
-      PASSWORD=`kubectl get secret --namespace kqi-system platypus-web-api-env-secret -o jsonpath="{.data.DeployOptions__Password}" | base64 --decode` 
+      PASSWORD=$(kubectl get secret --namespace kqi-system platypus-web-api-env-secret -o jsonpath="{.data.DeployOptions__Password}" | base64 --decode)
     fi
     if [ -z "$DB_PASSWORD" ]; then
-      DB_PASSWORD=`kubectl get secret --namespace kqi-system postgres-credential -o jsonpath="{.data.POSTGRES_PASSWORD}" | base64 --decode`
+      DB_PASSWORD=$(kubectl get secret --namespace kqi-system postgres-credential -o jsonpath="{.data.POSTGRES_PASSWORD}" | base64 --decode)
     fi
     if [ -z "$STORAGE_PASSWORD" ]; then
-      STORAGE_PASSWORD=`kubectl get secret --namespace kqi-system minio-credential -o jsonpath="{.data.MINIO_ROOT_PASSWORD}" | base64 --decode`
+      STORAGE_PASSWORD=$(kubectl get secret --namespace kqi-system minio-credential -o jsonpath="{.data.MINIO_ROOT_PASSWORD}" | base64 --decode)
       # MinIOが以前のバージョンだと環境変数名は"MINIO_SECRET_KEY"なので、そこからパスワードを取得する
       if [ -z "$STORAGE_PASSWORD" ]; then
-        STORAGE_PASSWORD=`kubectl get secret --namespace kqi-system minio-credential -o jsonpath="{.data.MINIO_SECRET_KEY}" | base64 --decode`
+        STORAGE_PASSWORD=$(kubectl get secret --namespace kqi-system minio-credential -o jsonpath="{.data.MINIO_SECRET_KEY}" | base64 --decode)
       fi
     fi
     SET_ARGS="password=$PASSWORD,db_password=$DB_PASSWORD,storage_secretkey=$STORAGE_PASSWORD"

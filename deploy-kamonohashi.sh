@@ -439,7 +439,7 @@ set_db_credentials(){
   fi
 
   # PostgreDBのPod名を取得
-  POD_NAME=`kubectl get pods --no-headers -o custom-columns=":metadata.name" --namespace kqi-system | grep postgres`
+  POD_NAME=$(kubectl get pods --namespace kqi-system | grep postgres | awk '{print $1}')
   # Pod内でSQLコマンド実行
   kubectl exec $POD_NAME -it --namespace kqi-system -- /bin/sh -c "\
     psql -U platypus -d platypusdb -w -c \"ALTER USER platypus WITH PASSWORD '$DB_PASSWORD'\";
