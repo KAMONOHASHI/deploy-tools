@@ -425,7 +425,74 @@ update(){
   esac
 }
 
+############
+#  credentials関連
+############
 
+set_db_credentials(){
+  cd $HELM_DIR
+  if [ -z "$1" ]; then
+    echo -en "\e[33m新しいDB Passwordを入力: \e[m"; read -s DB_PASSWORD
+    echo "" # read -s は改行しないため、echoで改行
+  else
+    DB_PASSWORD=$1
+  fi
+
+  # PostgreDBのPod名を取得
+  POD_NAME=$(kubectl get pods --namespace kqi-system | grep postgres | awk '{print $1}')
+  # Pod内でSQLコマンド実行
+  kubectl exec $POD_NAME -it --namespace kqi-system -- /bin/sh -c "\
+    psql -U platypus -d platypusdb -w -c \"ALTER USER platypus WITH PASSWORD '$DB_PASSWORD'\";
+  "
+  # credentials更新
+  DB_PASSWORD=$DB_PASSWORD ./deploy-kqi-app.sh credentials
+  # Podを再起動
+  kubectl rollout restart deploy postgres --namespace kqi-system
+  kubectl rollout restart deploy platypus-web-api --namespace kqi-system
+
+  echo -e "\nDBの認証情報を更新しました"
+}
+
+set_storage_credentials(){
+  cd $HELM_DIR
+  if [ -z "$1" ]; then
+    echo -en "\e[33m新しいStorage Secret Keyを入力: \e[m"; read -s STORAGE_PASSWORD
+    echo "" # read -s は改行しないため、echoで改行
+  else
+    STORAGE_PASSWORD=$1
+  fi
+
+  # credentials更新
+  STORAGE_PASSWORD=$STORAGE_PASSWORD ./deploy-kqi-app.sh credentials
+  # Podを再起動
+  kubectl rollout restart deploy minio --namespace kqi-system
+
+  echo -e "\nストレージの認証情報を更新しました"
+  echo "KAMONOHASHIのDBに保管されているストレージの接続情報はストレージ管理画面から適宜変更してください"
+}
+
+set_platypus_credentials(){
+  echo -e "\nKAMONOHASHIのAdminユーザのパスワードについてはユーザ管理画面から適宜変更してください"
+}
+
+set_credentials(){
+  case $1 in
+    storage)
+      set_storage_credentials ;;
+    db)
+      set_db_credentials ;;
+    all)
+      echo -en "\e[33m新しいAdmin Passwordを入力: \e[m"; read -s PASSWORD
+      echo "" # read -s は改行しないため、echoで改行
+
+      set_db_credentials $PASSWORD
+      set_storage_credentials $PASSWORD
+      set_platypus_credentials
+      ;;
+    *)
+      show_unknown_arg "credentials" "storage, db, all" $1 ;;
+  esac
+}
 
 ############
 #  check関連
@@ -467,13 +534,14 @@ Usage: ./deploy-kamonohashi.sh COMMAND [ARGS] [OPTIONS]
   KAMONOHASHI デプロイスクリプト: ${THIS_SCRIPT_VER}
 
 Commands:
-  prepare    構築に利用するツールのインストールを行います
-  configure  構築の設定を行います
-  deploy     構築します
-  update     アプリのアップデートまたはクラスタ設定の更新反映を行います
-  clean      アンインストールします
-  check      デプロイの状態確認を行います
-  help       このヘルプを表示します
+  prepare     構築に利用するツールのインストールを行います
+  configure   構築の設定を行います
+  deploy      構築します
+  update      アプリのアップデートまたはクラスタ設定の更新反映を行います
+  clean       アンインストールします
+  credentials 認証情報の設定を行います
+  check       デプロイの状態確認を行います
+  help        このヘルプを表示します
 
 詳細は ${HELP_URL} で確認してください
 
@@ -494,6 +562,7 @@ main(){
     deploy) deploy ${@:2};;
     update) update ${@:2};;
     clean) clean ${@:2};;
+    credentials) set_credentials ${@:2};;
     check) check ${@:2};;
     help) show_help ;;
     *) show_help ;;
