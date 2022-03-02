@@ -213,21 +213,17 @@ generate_verup_conf(){
   cd $DEEPOPS_DIR
   mkdir -p $TMP_DIR
   # 元の設定ファイルと比較して変更があったものを書き込む
-  python3 $FILES_DIR/diff-yaml.py $INFRA_CONF_DIR/group_vars/all.yml $OLD_DEEPOPS_FILES_DIR/all.yml >> $TMP_DIR/deepops_settings.yml
-  python3 $FILES_DIR/diff-yaml.py $INFRA_CONF_DIR/group_vars/k8s-cluster.yml $OLD_DEEPOPS_FILES_DIR/k8s-cluster.yml >> $TMP_DIR/deepops_settings.yml
   cp $INVENTORY $TMP_DIR/inventory
   cp $APP_CONF_FILE $TMP_DIR/kqi_settings.yml
+  cp $EXTRA_VARS $TMP_DIR/deepops_settings.yml
  
   backup_old_conf
   cp -rfp $DEEPOPS_DIR/config.example $DEEPOPS_DIR/config
-  cp $DEEPOPS_$FILES_DIR/deepops/$DEEPOPS_VER/settings.yml $DEEPOPS_DIR/config/
 
-  # 異なる設定だけを追記
-  python3 $FILES_DIR/diff-yaml.py $TMP_DIR/deepops_settings.yml $INFRA_CONF_DIR/settings.yml >> $INFRA_CONF_DIR/settings.yml 
-
-  
   cp -f $TMP_DIR/inventory $INVENTORY
   cp -f $TMP_DIR/kqi_settings.yml $APP_CONF_FILE
+  cp -f $TMP_DIR/deepops_settings.yml $EXTRA_VARS
+
 }
 
 generate_conf(){
