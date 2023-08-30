@@ -15,8 +15,8 @@ readonly LOG_FILE=$LOG_DIR/deploy_$DATE.log
 readonly HELP_URL="https://kamonohashi.ai/docs/install-and-update"
 
 readonly DEEPOPS_DIR=$SCRIPT_DIR/deepops
-readonly DEEPOPS_VER=21.03
-readonly OLD_DEEPOPS_VER=20.02.1
+readonly DEEPOPS_VER=23.08
+readonly OLD_DEEPOPS_VER=21.03
 readonly HELM_DIR=$SCRIPT_DIR/kamonohashi
 readonly FILES_DIR=$SCRIPT_DIR/files
 readonly DEEPOPS_FILES_DIR=$FILES_DIR/deepops/$DEEPOPS_VER

@@ -1,0 +1,21 @@
+- hosts: nfs-server
+  become: yes
+  tasks:
+  - name: install nfs kernel server
+    apt: 
+      pkg: nfs-kernel-server 
+      state: present
+  - name: create nfs dir
+    file:
+      path: /var/lib/kamonohashi/nfs
+      state: directory 
+  - name: setup export
+    copy:
+      content: |
+        /var/lib/kamonohashi/nfs *(rw,sync,no_root_squash)
+      dest: /etc/exports
+  - name: restart nfs server
+    systemd:
+      state: restarted
+      daemon_reload: yes
+      name: nfs-kernel-server
