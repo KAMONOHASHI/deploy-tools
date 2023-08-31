@@ -1,0 +1,30 @@
+# KAMONOHASHIのデフォルト
+
+## NFSはDEEPOPSのものは使用しない
+k8s_deploy_nfs_server: false
+k8s_nfs_client_provisioner: false
+
+## NTPを書き換えない
+chrony_install: false
+
+## Deepopsのレジストリは使用しない
+kube_enable_container_registry: false
+
+## ansibleの実行にpython3を指定
+ansible_python_interpreter: /usr/bin/python3
+
+## 性能より安定性を優先してkube_proxy_modeをiptablesに。
+kube_proxy_mode: iptables
+
+## kubelet 証明書更新
+kubelet_rotate_certificates: true
+kubelet_rotate_server_certificates: true
+
+## saのsecretが自動生成されたくなったことへのワークアラウンド
+kube_feature_gates:
+        - "LegacyServiceAccountTokenNoAutoGeneration=False"
+
+# 以下に追加の設定を記載
+
+
+
