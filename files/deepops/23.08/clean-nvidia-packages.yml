@@ -1,0 +1,21 @@
+- hosts: kube-node
+  become: yes
+  tasks:
+  - name: uninstall cuda-drivers
+    apt: 
+      pkg: cuda-drivers
+      state: absent
+      purge: yes
+      autoremove: yes
+  - name: uninstall nvidia packages
+    apt:
+      pkg: nvidia*
+      state: absent
+      purge: yes
+      autoremove: yes
+  - name: remove docker daemon.json which has nvidia runtime config
+    file:
+       path: /etc/docker/daemon.json
+       state: absent
+  - name: reboot kube nodes
+    reboot:
